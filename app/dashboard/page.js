@@ -8,7 +8,7 @@ export default function Dashboard() {
   useEffect(() => {
     const token = localStorage.getItem("access_token")
 
-    fetch("https://SEU_BACKEND.onrender.com/me", {
+    fetch("https://calia-backend.onrender.com/me", {
       headers: {
         Authorization: `Bearer ${token}`
       }
