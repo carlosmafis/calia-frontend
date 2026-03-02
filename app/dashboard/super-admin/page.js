@@ -56,10 +56,23 @@ export default function SuperAdmin() {
       return
     }
 
+    const result = await res.json()
+
     setName("")
     setSlug("")
     await loadSchools()
     setCreating(false)
+
+    alert(
+      `✅ Escola criada com sucesso!
+
+👤 Admin criado automaticamente:
+
+Email: ${result.admin_email}
+Senha: ${result.admin_password}
+
+Recomenda-se alterar a senha no primeiro login.`
+    )
   }
 
   if (loading) return <p>Carregando escolas...</p>
