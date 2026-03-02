@@ -12,7 +12,7 @@ export default function Dashboard() {
       return
     }
 
-    fetch("https://SEU_BACKEND.onrender.com/me", {
+    fetch("https://calia-backend.onrender.com/me", {
       headers: {
         Authorization: `Bearer ${token}`
       }
