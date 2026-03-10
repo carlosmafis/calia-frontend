@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 
 export default function Professor() {
+  const [students, setStudents] = useState([])
+  const [selectedStudent, setSelectedStudent] = useState("")
   const [file, setFile] = useState(null)
   const [result, setResult] = useState(null)
   const [history, setHistory] = useState([])
@@ -11,6 +13,14 @@ export default function Professor() {
   const token = typeof window !== "undefined"
     ? localStorage.getItem("access_token")
     : null
+
+  const loadStudents = async () => {
+    const res = await fetch("https://calia-backend.onrender.com/students", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const data = await res.json()
+    setStudents(data)
+  }
 
   const loadHistory = async () => {
     const res = await fetch("https://calia-backend.onrender.com/ocr-history", {
@@ -21,12 +31,13 @@ export default function Professor() {
   }
 
   useEffect(() => {
+    loadStudents()
     loadHistory()
   }, [])
 
   const handleUpload = async () => {
-    if (!file) {
-      alert("Selecione um arquivo")
+    if (!file || !selectedStudent) {
+      alert("Selecione aluno e arquivo")
       return
     }
 
@@ -34,6 +45,7 @@ export default function Professor() {
 
     const formData = new FormData()
     formData.append("file", file)
+    formData.append("student_id", selectedStudent)
 
     const res = await fetch("https://calia-backend.onrender.com/ocr-upload", {
       method: "POST",
@@ -54,7 +66,21 @@ export default function Professor() {
     <div>
       <h2>Painel do Professor 📚</h2>
 
-      <h3>Enviar Arquivo para OCR</h3>
+      <h3>Selecionar Aluno</h3>
+
+      <select
+        value={selectedStudent}
+        onChange={(e) => setSelectedStudent(e.target.value)}
+      >
+        <option value="">Escolha um aluno</option>
+        {students.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+
+      <br /><br />
 
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
       <br /><br />
@@ -72,20 +98,17 @@ export default function Professor() {
 
       <hr style={{ margin: "40px 0" }} />
 
-      <h3>Histórico de OCR</h3>
+      <h3>Histórico Geral</h3>
 
-      {history.length === 0 && <p>Nenhum upload ainda.</p>}
-
-      <ul>
-        {history.map((item) => (
-          <li key={item.id}>
-            <strong>{item.file_url}</strong> <br />
-            <small>{new Date(item.created_at).toLocaleString()}</small>
-            <p>{item.extracted_text}</p>
-            <hr />
-          </li>
-        ))}
-      </ul>
+      {history.map((item) => (
+        <div key={item.id}>
+          <strong>{item.file_url}</strong>
+          <br />
+          <small>{new Date(item.created_at).toLocaleString()}</small>
+          <p>{item.extracted_text}</p>
+          <hr />
+        </div>
+      ))}
     </div>
   )
 }
