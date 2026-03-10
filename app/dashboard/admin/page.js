@@ -4,9 +4,12 @@ import { useEffect, useState } from "react"
 
 export default function Admin() {
   const [teachers, setTeachers] = useState([])
+  const [students, setStudents] = useState([])
+
   const [email, setEmail] = useState("")
   const [fullName, setFullName] = useState("")
-  const [loading, setLoading] = useState(true)
+
+  const [studentName, setStudentName] = useState("")
 
   const token = typeof window !== "undefined"
     ? localStorage.getItem("access_token")
@@ -18,14 +21,22 @@ export default function Admin() {
     })
     const data = await res.json()
     setTeachers(data)
-    setLoading(false)
+  }
+
+  const loadStudents = async () => {
+    const res = await fetch("https://calia-backend.onrender.com/students", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const data = await res.json()
+    setStudents(data)
   }
 
   useEffect(() => {
     loadTeachers()
+    loadStudents()
   }, [])
 
-  const handleCreate = async () => {
+  const handleCreateTeacher = async () => {
     const res = await fetch("https://calia-backend.onrender.com/teachers", {
       method: "POST",
       headers: {
@@ -41,7 +52,7 @@ export default function Admin() {
     const result = await res.json()
 
     alert(
-      `Professor criado!\n\nEmail: ${result.email}\nSenha temporária: ${result.temporary_password}`
+      `Professor criado!\n\nEmail: ${result.email}\nSenha: ${result.temporary_password}`
     )
 
     setEmail("")
@@ -49,11 +60,32 @@ export default function Admin() {
     loadTeachers()
   }
 
-  if (loading) return <p>Carregando professores...</p>
+  const handleCreateStudent = async () => {
+    const res = await fetch("https://calia-backend.onrender.com/students", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        name: studentName
+      })
+    })
+
+    await res.json()
+
+    alert("Aluno criado com sucesso")
+
+    setStudentName("")
+    loadStudents()
+  }
 
   return (
     <div>
+
       <h2>Painel da Escola 🏫</h2>
+
+      <hr />
 
       <h3>Criar Professor</h3>
 
@@ -62,6 +94,7 @@ export default function Admin() {
         value={fullName}
         onChange={(e) => setFullName(e.target.value)}
       />
+
       <br /><br />
 
       <input
@@ -69,23 +102,49 @@ export default function Admin() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
+
       <br /><br />
 
-      <button onClick={handleCreate}>
+      <button onClick={handleCreateTeacher}>
         Criar Professor
       </button>
 
-      <hr />
+      <hr style={{margin:"40px 0"}}/>
 
-      <h3>Professores da Escola</h3>
+      <h3>Criar Aluno</h3>
 
-      {teachers.length === 0 && <p>Nenhum professor cadastrado.</p>}
+      <input
+        placeholder="Nome do aluno"
+        value={studentName}
+        onChange={(e) => setStudentName(e.target.value)}
+      />
+
+      <br /><br />
+
+      <button onClick={handleCreateStudent}>
+        Criar Aluno
+      </button>
+
+      <hr style={{margin:"40px 0"}}/>
+
+      <h3>Professores</h3>
 
       <ul>
         {teachers.map((t) => (
-          <li key={t.id}>{t.full_name} — {t.role}</li>
+          <li key={t.id}>{t.full_name}</li>
         ))}
       </ul>
+
+      <hr />
+
+      <h3>Alunos</h3>
+
+      <ul>
+        {students.map((s) => (
+          <li key={s.id}>{s.name}</li>
+        ))}
+      </ul>
+
     </div>
   )
 }
