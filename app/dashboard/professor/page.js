@@ -9,6 +9,9 @@ export default function Professor() {
   const [result, setResult] = useState(null)
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(false)
+  const [assessmentTitle,setAssessmentTitle] = useState("")
+  const [questions,setQuestions] = useState("")
+  const [classId,setClassId] = useState("")
 
   const token = typeof window !== "undefined"
     ? localStorage.getItem("access_token")
@@ -35,6 +38,31 @@ export default function Professor() {
     loadHistory()
   }, [])
 
+const handleCreateAssessment = async ()=>{
+
+ const res = await fetch("https://calia-backend.onrender.com/assessments",{
+
+  method:"POST",
+
+  headers:{
+   "Content-Type":"application/json",
+   Authorization:`Bearer ${token}`
+  },
+
+  body:JSON.stringify({
+   class_id:classId,
+   title:assessmentTitle,
+   total_questions:Number(questions)
+  })
+
+ })
+
+ const data = await res.json()
+
+ alert("Avaliação criada")
+
+}
+  
   const handleUpload = async () => {
     if (!file || !selectedStudent) {
       alert("Selecione aluno e arquivo")
