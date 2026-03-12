@@ -4,305 +4,246 @@ import { useEffect, useState } from "react"
 
 export default function Admin() {
 
-  const [teachers, setTeachers] = useState([])
-  const [students, setStudents] = useState([])
-  const [classes, setClasses] = useState([])
-
-  const [email, setEmail] = useState("")
-  const [fullName, setFullName] = useState("")
-
-  const [studentName, setStudentName] = useState("")
-
-  const [className, setClassName] = useState("")
-  const [year, setYear] = useState("")
-
-  const [selectedTeacher, setSelectedTeacher] = useState("")
-  const [selectedClass, setSelectedClass] = useState("")
-
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem("access_token")
       : null
 
-  // -------------------------
-  // LOAD DATA
-  // -------------------------
+  const [classes,setClasses] = useState([])
+  const [students,setStudents] = useState([])
 
-  const loadTeachers = async () => {
-    const res = await fetch(
-      "https://calia-backend.onrender.com/teachers",
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    )
+  const [className,setClassName] = useState("")
+  const [classYear,setClassYear] = useState("")
 
-    const data = await res.json()
-    setTeachers(data)
-  }
+  const [selectedClass,setSelectedClass] = useState("")
+  const [studentName,setStudentName] = useState("")
 
-  const loadStudents = async () => {
-    const res = await fetch(
-      "https://calia-backend.onrender.com/students",
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    )
+  const [file,setFile] = useState(null)
 
-    const data = await res.json()
-    setStudents(data)
-  }
+  // =============================
+  // CARREGAR TURMAS
+  // =============================
 
   const loadClasses = async () => {
+
     const res = await fetch(
       "https://calia-backend.onrender.com/classes",
       {
-        headers: { Authorization: `Bearer ${token}` }
+        headers:{
+          Authorization:`Bearer ${token}`
+        }
       }
     )
 
     const data = await res.json()
+
     setClasses(data)
+
   }
 
-  useEffect(() => {
-    loadTeachers()
-    loadStudents()
-    loadClasses()
-  }, [])
+  // =============================
+  // CARREGAR ALUNOS
+  // =============================
 
-  // -------------------------
-  // CREATE TEACHER
-  // -------------------------
-
-  const handleCreateTeacher = async () => {
-
-    const res = await fetch(
-      "https://calia-backend.onrender.com/teachers",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          email,
-          full_name: fullName
-        })
-      }
-    )
-
-    const result = await res.json()
-
-    alert(
-      `Professor criado!\n\nEmail: ${result.email}\nSenha: ${result.temporary_password}`
-    )
-
-    setEmail("")
-    setFullName("")
-
-    loadTeachers()
-  }
-
-  // -------------------------
-  // CREATE STUDENT
-  // -------------------------
-
-  const handleCreateStudent = async () => {
+  const loadStudents = async () => {
 
     const res = await fetch(
       "https://calia-backend.onrender.com/students",
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: studentName
-        })
+        headers:{
+          Authorization:`Bearer ${token}`
+        }
       }
     )
 
-    await res.json()
+    const data = await res.json()
 
-    alert("Aluno criado com sucesso")
+    setStudents(data)
 
-    setStudentName("")
-
-    loadStudents()
   }
 
-  // -------------------------
-  // CREATE CLASS
-  // -------------------------
+  // =============================
+  // CRIAR TURMA
+  // =============================
 
   const handleCreateClass = async () => {
 
-    const res = await fetch(
-      "https://calia-backend.onrender.com/classes",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: className,
-          year: year
-        })
-      }
-    )
-
-    await res.json()
-
-    alert("Turma criada")
-
-    setClassName("")
-    setYear("")
-
-    loadClasses()
-  }
-
-  // -------------------------
-  // ASSIGN TEACHER TO CLASS
-  // -------------------------
-
-  const handleAssignTeacher = async () => {
-
-    if (!selectedTeacher || !selectedClass) {
-      alert("Selecione professor e turma")
+    if(!className || !classYear){
+      alert("Preencha nome e ano")
       return
     }
 
     await fetch(
-      "https://calia-backend.onrender.com/assign-teacher",
+      "https://calia-backend.onrender.com/classes",
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:`Bearer ${token}`
         },
-        body: JSON.stringify({
-          teacher_id: selectedTeacher,
-          class_id: selectedClass
+        body:JSON.stringify({
+          name:className,
+          year:classYear
         })
       }
     )
 
-    alert("Professor vinculado à turma")
+    setClassName("")
+    setClassYear("")
 
-    setSelectedTeacher("")
-    setSelectedClass("")
+    loadClasses()
+
   }
 
-  // -------------------------
-  // UI
-  // -------------------------
+  // =============================
+  // CRIAR ALUNO
+  // =============================
+
+  const handleCreateStudent = async () => {
+
+    if(!selectedClass){
+      alert("Selecione a turma")
+      return
+    }
+
+    if(!studentName){
+      alert("Digite o nome do aluno")
+      return
+    }
+
+    await fetch(
+      "https://calia-backend.onrender.com/students",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:`Bearer ${token}`
+        },
+        body:JSON.stringify({
+          name:studentName,
+          class_id:selectedClass
+        })
+      }
+    )
+
+    setStudentName("")
+
+    loadStudents()
+
+  }
+
+  // =============================
+  // IMPORTAR ALUNOS
+  // =============================
+
+  const handleImportStudents = async () => {
+
+    if(!file || !selectedClass){
+      alert("Selecione turma e planilha")
+      return
+    }
+
+    const formData = new FormData()
+
+    formData.append("class_id",selectedClass)
+    formData.append("file",file)
+
+    await fetch(
+      "https://calia-backend.onrender.com/students-upload",
+      {
+        method:"POST",
+        headers:{
+          Authorization:`Bearer ${token}`
+        },
+        body:formData
+      }
+    )
+
+    loadStudents()
+
+  }
+
+  // =============================
+  // ALTERAR STATUS
+  // =============================
+
+  const updateStatus = async (id,status) => {
+
+    await fetch(
+      `https://calia-backend.onrender.com/students/${id}`,
+      {
+        method:"PUT",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:`Bearer ${token}`
+        },
+        body:JSON.stringify({
+          status:status
+        })
+      }
+    )
+
+    loadStudents()
+
+  }
+
+  // =============================
+  // LOAD INICIAL
+  // =============================
+
+  useEffect(()=>{
+
+    loadClasses()
+    loadStudents()
+
+  },[])
 
   return (
-    <div>
 
-      <h2>Painel da Escola 🏫</h2>
+    <div style={{padding:40}}>
 
-      <hr />
+      <h1>Painel Admin</h1>
 
-      {/* CREATE TEACHER */}
+      <hr/>
 
-      <h3>Criar Professor</h3>
-
-      <input
-        placeholder="Nome completo"
-        value={fullName}
-        onChange={(e) => setFullName(e.target.value)}
-      />
-
-      <br /><br />
-
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={handleCreateTeacher}>
-        Criar Professor
-      </button>
-
-      <hr style={{ margin: "40px 0" }} />
-
-      {/* CREATE STUDENT */}
-
-      <h3>Criar Aluno</h3>
-
-      <input
-        placeholder="Nome do aluno"
-        value={studentName}
-        onChange={(e) => setStudentName(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={handleCreateStudent}>
-        Criar Aluno
-      </button>
-
-      <hr style={{ margin: "40px 0" }} />
-
-      {/* CREATE CLASS */}
-
-      <h3>Criar Turma</h3>
+      <h2>Criar Turma</h2>
 
       <input
         placeholder="Nome da turma"
         value={className}
-        onChange={(e) => setClassName(e.target.value)}
+        onChange={(e)=>setClassName(e.target.value)}
       />
 
-      <br /><br />
+      <br/><br/>
 
       <input
         placeholder="Ano"
-        value={year}
-        onChange={(e) => setYear(e.target.value)}
+        value={classYear}
+        onChange={(e)=>setClassYear(e.target.value)}
       />
 
-      <br /><br />
+      <br/><br/>
 
       <button onClick={handleCreateClass}>
         Criar Turma
       </button>
 
-      <hr style={{ margin: "40px 0" }} />
+      <hr/>
 
-      {/* ASSIGN TEACHER */}
+      <h2>Criar Aluno</h2>
 
-      <h3>Vincular Professor à Turma</h3>
+      <label>Turma</label>
 
-      <select
-        value={selectedTeacher}
-        onChange={(e) => setSelectedTeacher(e.target.value)}
-      >
-        <option value="">Selecione Professor</option>
-
-        {teachers.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.full_name}
-          </option>
-        ))}
-
-      </select>
-
-      <br /><br />
+      <br/>
 
       <select
         value={selectedClass}
-        onChange={(e) => setSelectedClass(e.target.value)}
+        onChange={(e)=>setSelectedClass(e.target.value)}
       >
-        <option value="">Selecione Turma</option>
 
-        {classes.map((c) => (
+        <option value="">Selecione</option>
+
+        {classes.map(c=>(
           <option key={c.id} value={c.id}>
             {c.name} - {c.year}
           </option>
@@ -310,50 +251,83 @@ export default function Admin() {
 
       </select>
 
-      <br /><br />
+      <br/><br/>
 
-      <button onClick={handleAssignTeacher}>
-        Vincular
+      <input
+        placeholder="Nome do aluno"
+        value={studentName}
+        onChange={(e)=>setStudentName(e.target.value)}
+      />
+
+      <br/><br/>
+
+      <button onClick={handleCreateStudent}>
+        Criar aluno
       </button>
 
-      <hr style={{ margin: "40px 0" }} />
+      <hr/>
 
-      {/* LIST TEACHERS */}
+      <h2>Importar alunos (planilha)</h2>
 
-      <h3>Professores</h3>
+      <input
+        type="file"
+        accept=".csv"
+        onChange={(e)=>setFile(e.target.files[0])}
+      />
 
-      <ul>
-        {teachers.map((t) => (
-          <li key={t.id}>{t.full_name}</li>
-        ))}
-      </ul>
+      <br/><br/>
 
-      <hr />
+      <button onClick={handleImportStudents}>
+        Importar
+      </button>
 
-      {/* LIST STUDENTS */}
+      <hr/>
 
-      <h3>Alunos</h3>
+      <h2>Alunos cadastrados</h2>
 
-      <ul>
-        {students.map((s) => (
-          <li key={s.id}>{s.name}</li>
-        ))}
-      </ul>
+      {students.map(s=>(
 
-      <hr />
+        <div
+          key={s.id}
+          style={{
+            border:"1px solid #ddd",
+            padding:10,
+            marginBottom:10
+          }}
+        >
 
-      {/* LIST CLASSES */}
+          <strong>{s.name}</strong>
 
-      <h3>Turmas</h3>
+          <br/>
 
-      <ul>
-        {classes.map((c) => (
-          <li key={c.id}>
-            {c.name} - {c.year}
-          </li>
-        ))}
-      </ul>
+          Status: {s.status}
+
+          <br/><br/>
+
+          <button
+            onClick={()=>updateStatus(s.id,"CURSANDO")}
+          >
+            Cursando
+          </button>
+
+          <button
+            onClick={()=>updateStatus(s.id,"TRANSFERIDO")}
+          >
+            Transferido
+          </button>
+
+          <button
+            onClick={()=>updateStatus(s.id,"ABANDONO")}
+          >
+            Abandono
+          </button>
+
+        </div>
+
+      ))}
 
     </div>
+
   )
+
 }
