@@ -20,9 +20,9 @@ export default function Admin() {
 
   const [file,setFile] = useState(null)
 
-  // ============================
+  // =============================
   // CARREGAR TURMAS
-  // ============================
+  // =============================
 
   const loadClasses = async () => {
 
@@ -41,16 +41,14 @@ export default function Admin() {
 
   }
 
-  // ============================
+  // =============================
   // CARREGAR ALUNOS
-  // ============================
+  // =============================
 
   const loadStudents = async () => {
 
-    if(!selectedClass) return
-
     const res = await fetch(
-      `https://calia-backend.onrender.com/students?class_id=${selectedClass}`,
+      "https://calia-backend.onrender.com/students",
       {
         headers:{
           Authorization:`Bearer ${token}`
@@ -64,9 +62,9 @@ export default function Admin() {
 
   }
 
-  // ============================
+  // =============================
   // CRIAR TURMA
-  // ============================
+  // =============================
 
   const handleCreateClass = async () => {
 
@@ -97,9 +95,9 @@ export default function Admin() {
 
   }
 
-  // ============================
+  // =============================
   // CRIAR ALUNO
-  // ============================
+  // =============================
 
   const handleCreateStudent = async () => {
 
@@ -134,9 +132,9 @@ export default function Admin() {
 
   }
 
-  // ============================
-  // IMPORTAR PLANILHA
-  // ============================
+  // =============================
+  // IMPORTAR ALUNOS
+  // =============================
 
   const handleImportStudents = async () => {
 
@@ -165,13 +163,40 @@ export default function Admin() {
 
   }
 
-  useEffect(()=>{
-    loadClasses()
-  },[])
+  // =============================
+  // ALTERAR STATUS
+  // =============================
+
+  const updateStatus = async (id,status) => {
+
+    await fetch(
+      `https://calia-backend.onrender.com/students/${id}`,
+      {
+        method:"PUT",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:`Bearer ${token}`
+        },
+        body:JSON.stringify({
+          status:status
+        })
+      }
+    )
+
+    loadStudents()
+
+  }
+
+  // =============================
+  // LOAD INICIAL
+  // =============================
 
   useEffect(()=>{
+
+    loadClasses()
     loadStudents()
-  },[selectedClass])
+
+  },[])
 
   return (
 
@@ -205,7 +230,11 @@ export default function Admin() {
 
       <hr/>
 
-      <h2>Selecionar Turma</h2>
+      <h2>Criar Aluno</h2>
+
+      <label>Turma</label>
+
+      <br/>
 
       <select
         value={selectedClass}
@@ -222,67 +251,80 @@ export default function Admin() {
 
       </select>
 
-      {selectedClass && (
+      <br/><br/>
 
-        <>
-        <hr/>
+      <input
+        placeholder="Nome do aluno"
+        value={studentName}
+        onChange={(e)=>setStudentName(e.target.value)}
+      />
 
-        <h2>Criar aluno manualmente</h2>
+      <br/><br/>
 
-        <input
-          placeholder="Nome do aluno"
-          value={studentName}
-          onChange={(e)=>setStudentName(e.target.value)}
-        />
+      <button onClick={handleCreateStudent}>
+        Criar aluno
+      </button>
 
-        <br/><br/>
+      <hr/>
 
-        <button onClick={handleCreateStudent}>
-          Criar aluno
-        </button>
+      <h2>Importar alunos (planilha)</h2>
 
-        <hr/>
+      <input
+        type="file"
+        accept=".csv"
+        onChange={(e)=>setFile(e.target.files[0])}
+      />
 
-        <h2>Importar lista de alunos</h2>
+      <br/><br/>
 
-        <input
-          type="file"
-          accept=".csv"
-          onChange={(e)=>setFile(e.target.files[0])}
-        />
+      <button onClick={handleImportStudents}>
+        Importar
+      </button>
 
-        <br/><br/>
+      <hr/>
 
-        <button onClick={handleImportStudents}>
-          Importar planilha
-        </button>
+      <h2>Alunos cadastrados</h2>
 
-        <hr/>
+      {students.map(s=>(
 
-        <h2>Alunos da turma</h2>
+        <div
+          key={s.id}
+          style={{
+            border:"1px solid #ddd",
+            padding:10,
+            marginBottom:10
+          }}
+        >
 
-        {students.map(s=>(
-          <div
-            key={s.id}
-            style={{
-              border:"1px solid #ddd",
-              padding:10,
-              marginBottom:10
-            }}
+          <strong>{s.name}</strong>
+
+          <br/>
+
+          Status: {s.status}
+
+          <br/><br/>
+
+          <button
+            onClick={()=>updateStatus(s.id,"CURSANDO")}
           >
+            Cursando
+          </button>
 
-            <strong>{s.name}</strong>
+          <button
+            onClick={()=>updateStatus(s.id,"TRANSFERIDO")}
+          >
+            Transferido
+          </button>
 
-            <br/>
+          <button
+            onClick={()=>updateStatus(s.id,"ABANDONO")}
+          >
+            Abandono
+          </button>
 
-            Status: {s.status}
+        </div>
 
-          </div>
-        ))}
-
-        </>
-
-      )}
+      ))}
 
     </div>
 
