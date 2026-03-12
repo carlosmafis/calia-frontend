@@ -20,9 +20,6 @@ export default function Admin() {
 
   const [file,setFile] = useState(null)
 
-  // =============================
-  // CARREGAR TURMAS
-  // =============================
 
   const loadClasses = async () => {
 
@@ -41,10 +38,6 @@ export default function Admin() {
 
   }
 
-  // =============================
-  // CARREGAR ALUNOS
-  // =============================
-
   const loadStudents = async () => {
 
     const res = await fetch(
@@ -61,10 +54,6 @@ export default function Admin() {
     setStudents(data)
 
   }
-
-  // =============================
-  // CRIAR TURMA
-  // =============================
 
   const handleCreateClass = async () => {
 
@@ -95,9 +84,6 @@ export default function Admin() {
 
   }
 
-  // =============================
-  // CRIAR ALUNO
-  // =============================
 
   const handleCreateStudent = async () => {
 
@@ -132,9 +118,6 @@ export default function Admin() {
 
   }
 
-  // =============================
-  // IMPORTAR ALUNOS
-  // =============================
 
   const handleImportStudents = async () => {
 
@@ -163,10 +146,7 @@ export default function Admin() {
 
   }
 
-  // =============================
-  // ALTERAR STATUS
-  // =============================
-
+  
   const updateStatus = async (id,status) => {
 
     await fetch(
@@ -187,9 +167,7 @@ export default function Admin() {
 
   }
 
-  // =============================
-  // LOAD INICIAL
-  // =============================
+  
 
   useEffect(()=>{
 
