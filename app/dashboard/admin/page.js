@@ -9,6 +9,10 @@ export default function Admin() {
       ? localStorage.getItem("access_token")
       : null
 
+  if(!token){
+    return <div>Carregando...</div>
+  }
+
   const [classes,setClasses] = useState([])
   const [students,setStudents] = useState([])
   const [teachers,setTeachers] = useState([])
@@ -24,6 +28,10 @@ export default function Admin() {
 
   const [file,setFile] = useState(null)
 
+  // ==============================
+  // CARREGAR TURMAS
+  // ==============================
+
   const loadClasses = async () => {
 
     const res = await fetch(
@@ -38,6 +46,29 @@ export default function Admin() {
     setClasses(data)
 
   }
+
+  // ==============================
+  // CARREGAR PROFESSORES
+  // ==============================
+
+  const loadTeachers = async () => {
+
+    const res = await fetch(
+      "https://calia-backend.onrender.com/teachers",
+      {
+        headers:{ Authorization:`Bearer ${token}` }
+      }
+    )
+
+    const data = await res.json()
+
+    setTeachers(data)
+
+  }
+
+  // ==============================
+  // CARREGAR ALUNOS
+  // ==============================
 
   const loadStudents = async () => {
 
@@ -58,24 +89,18 @@ export default function Admin() {
 
   }
 
-  const loadTeachers = async () => {
-
-    const res = await fetch(
-      "https://calia-backend.onrender.com/teachers",
-      {
-        headers:{ Authorization:`Bearer ${token}` }
-      }
-    )
-
-    const data = await res.json()
-
-    setTeachers(data)
-
-  }
+  // ==============================
+  // CRIAR TURMA
+  // ==============================
 
   const handleCreateClass = async () => {
 
-    await fetch(
+    if(!className || !classYear){
+      alert("Preencha nome e ano")
+      return
+    }
+
+    const res = await fetch(
       "https://calia-backend.onrender.com/classes",
       {
         method:"POST",
@@ -90,6 +115,13 @@ export default function Admin() {
       }
     )
 
+    if(!res.ok){
+      alert("Erro ao criar turma")
+      return
+    }
+
+    alert("Turma criada")
+
     setClassName("")
     setClassYear("")
 
@@ -97,31 +129,72 @@ export default function Admin() {
 
   }
 
+  // ==============================
+  // CRIAR PROFESSOR
+  // ==============================
+
   const handleCreateTeacher = async () => {
 
-    await fetch(
-      "https://calia-backend.onrender.com/teachers",
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          Authorization:`Bearer ${token}`
-        },
-        body:JSON.stringify({
-          full_name:teacherName,
-          email:teacherEmail
-        })
+    if(!teacherName || !teacherEmail){
+      alert("Preencha nome e email")
+      return
+    }
+
+    try{
+
+      const res = await fetch(
+        "https://calia-backend.onrender.com/teachers",
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+            Authorization:`Bearer ${token}`
+          },
+          body:JSON.stringify({
+            full_name:teacherName,
+            email:teacherEmail
+          })
+        }
+      )
+
+      const data = await res.json()
+
+      if(!res.ok){
+
+        console.error(data)
+
+        alert(data.detail || "Erro ao criar professor")
+
+        return
       }
-    )
 
-    setTeacherName("")
-    setTeacherEmail("")
+      alert("Professor criado com sucesso")
 
-    loadTeachers()
+      setTeacherName("")
+      setTeacherEmail("")
+
+      loadTeachers()
+
+    }catch(err){
+
+      console.error(err)
+
+      alert("Erro de conexão com servidor")
+
+    }
 
   }
 
+  // ==============================
+  // CRIAR ALUNO
+  // ==============================
+
   const handleCreateStudent = async () => {
+
+    if(!studentName || !selectedClass){
+      alert("Digite nome e selecione turma")
+      return
+    }
 
     await fetch(
       "https://calia-backend.onrender.com/students",
@@ -144,7 +217,16 @@ export default function Admin() {
 
   }
 
+  // ==============================
+  // IMPORTAR ALUNOS
+  // ==============================
+
   const handleImportStudents = async () => {
+
+    if(!file || !selectedClass){
+      alert("Selecione turma e planilha")
+      return
+    }
 
     const formData = new FormData()
 
@@ -165,6 +247,10 @@ export default function Admin() {
     loadStudents()
 
   }
+
+  // ==============================
+  // EDITAR ALUNO
+  // ==============================
 
   const saveStudentChanges = async (student) => {
 
@@ -252,7 +338,7 @@ export default function Admin() {
       <br/><br/>
 
       <input
-        placeholder="Email"
+        placeholder="Email do professor"
         value={teacherEmail}
         onChange={(e)=>setTeacherEmail(e.target.value)}
       />
