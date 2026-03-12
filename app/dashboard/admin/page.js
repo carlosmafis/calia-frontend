@@ -20,9 +20,9 @@ export default function Admin() {
 
   const [file,setFile] = useState(null)
 
-  // ==============================
+  // ============================
   // CARREGAR TURMAS
-  // ==============================
+  // ============================
 
   const loadClasses = async () => {
 
@@ -41,9 +41,9 @@ export default function Admin() {
 
   }
 
-  // ==============================
-  // CARREGAR ALUNOS DA TURMA
-  // ==============================
+  // ============================
+  // CARREGAR ALUNOS
+  // ============================
 
   const loadStudents = async () => {
 
@@ -64,11 +64,16 @@ export default function Admin() {
 
   }
 
-  // ==============================
+  // ============================
   // CRIAR TURMA
-  // ==============================
+  // ============================
 
   const handleCreateClass = async () => {
+
+    if(!className || !classYear){
+      alert("Preencha nome e ano")
+      return
+    }
 
     await fetch(
       "https://calia-backend.onrender.com/classes",
@@ -92,14 +97,19 @@ export default function Admin() {
 
   }
 
-  // ==============================
-  // CRIAR ALUNO MANUAL
-  // ==============================
+  // ============================
+  // CRIAR ALUNO
+  // ============================
 
   const handleCreateStudent = async () => {
 
     if(!selectedClass){
-      alert("Selecione uma turma")
+      alert("Selecione a turma")
+      return
+    }
+
+    if(!studentName){
+      alert("Digite o nome do aluno")
       return
     }
 
@@ -124,9 +134,9 @@ export default function Admin() {
 
   }
 
-  // ==============================
+  // ============================
   // IMPORTAR PLANILHA
-  // ==============================
+  // ============================
 
   const handleImportStudents = async () => {
 
@@ -148,30 +158,6 @@ export default function Admin() {
           Authorization:`Bearer ${token}`
         },
         body:formData
-      }
-    )
-
-    loadStudents()
-
-  }
-
-  // ==============================
-  // ALTERAR STATUS
-  // ==============================
-
-  const updateStatus = async (id,status) => {
-
-    await fetch(
-      `https://calia-backend.onrender.com/students/${id}`,
-      {
-        method:"PUT",
-        headers:{
-          "Content-Type":"application/json",
-          Authorization:`Bearer ${token}`
-        },
-        body:JSON.stringify({
-          status:status
-        })
       }
     )
 
@@ -226,7 +212,7 @@ export default function Admin() {
         onChange={(e)=>setSelectedClass(e.target.value)}
       >
 
-        <option value="">Selecione uma turma</option>
+        <option value="">Selecione</option>
 
         {classes.map(c=>(
           <option key={c.id} value={c.id}>
@@ -241,7 +227,7 @@ export default function Admin() {
         <>
         <hr/>
 
-        <h2>Adicionar Aluno Manualmente</h2>
+        <h2>Criar aluno manualmente</h2>
 
         <input
           placeholder="Nome do aluno"
@@ -290,20 +276,6 @@ export default function Admin() {
             <br/>
 
             Status: {s.status}
-
-            <br/><br/>
-
-            <button onClick={()=>updateStatus(s.id,"CURSANDO")}>
-              Cursando
-            </button>
-
-            <button onClick={()=>updateStatus(s.id,"TRANSFERIDO")}>
-              Transferido
-            </button>
-
-            <button onClick={()=>updateStatus(s.id,"ABANDONO")}>
-              Abandono
-            </button>
 
           </div>
         ))}
