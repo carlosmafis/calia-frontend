@@ -9,6 +9,10 @@ export default function Professor() {
       ? localStorage.getItem("access_token")
       : null
 
+  if(!token){
+    return <div>Carregando...</div>
+  }
+
   const [classes,setClasses] = useState([])
   const [students,setStudents] = useState([])
   const [assessments,setAssessments] = useState([])
@@ -21,9 +25,9 @@ export default function Professor() {
 
   const [result,setResult] = useState(null)
 
-  // ============================
-  // CARREGAR TURMAS
-  // ============================
+  // =========================
+  // CARREGAR TURMAS DO PROFESSOR
+  // =========================
 
   const loadClasses = async () => {
 
@@ -42,9 +46,9 @@ export default function Professor() {
 
   }
 
-  // ============================
+  // =========================
   // CARREGAR ALUNOS
-  // ============================
+  // =========================
 
   const loadStudents = async () => {
 
@@ -67,9 +71,9 @@ export default function Professor() {
 
   }
 
-  // ============================
+  // =========================
   // CARREGAR AVALIAÇÕES
-  // ============================
+  // =========================
 
   const loadAssessments = async () => {
 
@@ -92,9 +96,9 @@ export default function Professor() {
 
   }
 
-  // ============================
-  // OCR
-  // ============================
+  // =========================
+  // OCR CORREÇÃO
+  // =========================
 
   const handleUpload = async () => {
 
@@ -123,6 +127,13 @@ export default function Professor() {
     )
 
     const data = await res.json()
+
+    if(!res.ok){
+
+      alert(data.detail)
+
+      return
+    }
 
     setResult(data.score)
 
