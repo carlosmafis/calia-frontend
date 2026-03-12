@@ -20,7 +20,6 @@ export default function Admin() {
 
   const [file,setFile] = useState(null)
 
-
   const loadClasses = async () => {
 
     const res = await fetch(
@@ -51,7 +50,11 @@ export default function Admin() {
 
     const data = await res.json()
 
-    setStudents(data)
+    const filtered = data.filter(
+      s => s.class_id === selectedClass
+    )
+
+    setStudents(filtered)
 
   }
 
@@ -83,7 +86,6 @@ export default function Admin() {
     loadClasses()
 
   }
-
 
   const handleCreateStudent = async () => {
 
@@ -118,7 +120,6 @@ export default function Admin() {
 
   }
 
-
   const handleImportStudents = async () => {
 
     if(!file || !selectedClass){
@@ -146,11 +147,10 @@ export default function Admin() {
 
   }
 
-  
-  const updateStatus = async (id,status) => {
+  const updateStudentStatus = async (studentId,status) => {
 
     await fetch(
-      `https://calia-backend.onrender.com/students/${id}`,
+      `https://calia-backend.onrender.com/students/${studentId}`,
       {
         method:"PUT",
         headers:{
@@ -167,14 +167,31 @@ export default function Admin() {
 
   }
 
-  
+  const moveStudent = async (studentId,newClass) => {
 
-  useEffect(()=>{
+    await fetch(
+      `https://calia-backend.onrender.com/students/move/${studentId}?class_id=${newClass}`,
+      {
+        method:"PUT",
+        headers:{
+          Authorization:`Bearer ${token}`
+        }
+      }
+    )
 
-    loadClasses()
     loadStudents()
 
+  }
+
+  useEffect(()=>{
+    loadClasses()
   },[])
+
+  useEffect(()=>{
+    if(selectedClass){
+      loadStudents()
+    }
+  },[selectedClass])
 
   return (
 
@@ -208,11 +225,7 @@ export default function Admin() {
 
       <hr/>
 
-      <h2>Criar Aluno</h2>
-
-      <label>Turma</label>
-
-      <br/>
+      <h2>Selecionar Turma</h2>
 
       <select
         value={selectedClass}
@@ -229,80 +242,101 @@ export default function Admin() {
 
       </select>
 
-      <br/><br/>
+      {selectedClass && (
 
-      <input
-        placeholder="Nome do aluno"
-        value={studentName}
-        onChange={(e)=>setStudentName(e.target.value)}
-      />
+        <>
+        <hr/>
 
-      <br/><br/>
+        <h2>Criar aluno manualmente</h2>
 
-      <button onClick={handleCreateStudent}>
-        Criar aluno
-      </button>
+        <input
+          placeholder="Nome do aluno"
+          value={studentName}
+          onChange={(e)=>setStudentName(e.target.value)}
+        />
 
-      <hr/>
+        <br/><br/>
 
-      <h2>Importar alunos (planilha)</h2>
+        <button onClick={handleCreateStudent}>
+          Criar aluno
+        </button>
 
-      <input
-        type="file"
-        accept=".csv"
-        onChange={(e)=>setFile(e.target.files[0])}
-      />
+        <hr/>
 
-      <br/><br/>
+        <h2>Importar lista de alunos</h2>
 
-      <button onClick={handleImportStudents}>
-        Importar
-      </button>
+        <input
+          type="file"
+          accept=".csv"
+          onChange={(e)=>setFile(e.target.files[0])}
+        />
 
-      <hr/>
+        <br/><br/>
 
-      <h2>Alunos cadastrados</h2>
+        <button onClick={handleImportStudents}>
+          Importar planilha
+        </button>
 
-      {students.map(s=>(
+        <hr/>
 
-        <div
-          key={s.id}
-          style={{
-            border:"1px solid #ddd",
-            padding:10,
-            marginBottom:10
-          }}
-        >
+        <h2>Alunos da turma</h2>
 
-          <strong>{s.name}</strong>
-
-          <br/>
-
-          Status: {s.status}
-
-          <br/><br/>
-
-          <button
-            onClick={()=>updateStatus(s.id,"CURSANDO")}
+        {students.map((s)=>(
+          <div
+            key={s.id}
+            style={{
+              border:"1px solid #ddd",
+              padding:12,
+              marginBottom:10,
+              borderRadius:6
+            }}
           >
-            Cursando
-          </button>
 
-          <button
-            onClick={()=>updateStatus(s.id,"TRANSFERIDO")}
-          >
-            Transferido
-          </button>
+            <strong>{s.name}</strong>
 
-          <button
-            onClick={()=>updateStatus(s.id,"ABANDONO")}
-          >
-            Abandono
-          </button>
+            <br/>
 
-        </div>
+            Status atual: <b>{s.status}</b>
 
-      ))}
+            <br/><br/>
+
+            <label>Status:</label>
+
+            <select
+              value={s.status}
+              onChange={(e)=>updateStudentStatus(s.id,e.target.value)}
+            >
+
+              <option value="CURSANDO">CURSANDO</option>
+              <option value="TRANSFERIDO">TRANSFERIDO</option>
+              <option value="ABANDONO">ABANDONO</option>
+
+            </select>
+
+            <br/><br/>
+
+            <label>Mover para turma:</label>
+
+            <select
+              onChange={(e)=>moveStudent(s.id,e.target.value)}
+            >
+
+              <option>Escolha turma</option>
+
+              {classes.map(c=>(
+                <option key={c.id} value={c.id}>
+                  {c.name} - {c.year}
+                </option>
+              ))}
+
+            </select>
+
+          </div>
+        ))}
+
+        </>
+
+      )}
 
     </div>
 
