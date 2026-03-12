@@ -8,6 +8,9 @@ export default function Admin() {
     typeof window !== "undefined"
       ? localStorage.getItem("access_token")
       : null
+  if (!token) {
+    return <div>Carregando painel...</div>
+  }
 
   const [classes,setClasses] = useState([])
   const [students,setStudents] = useState([])
