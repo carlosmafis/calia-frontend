@@ -8,15 +8,16 @@ export default function Admin() {
     typeof window !== "undefined"
       ? localStorage.getItem("access_token")
       : null
-  if (!token) {
-    return <div>Carregando painel...</div>
-  }
 
   const [classes,setClasses] = useState([])
   const [students,setStudents] = useState([])
+  const [teachers,setTeachers] = useState([])
 
   const [className,setClassName] = useState("")
   const [classYear,setClassYear] = useState("")
+
+  const [teacherName,setTeacherName] = useState("")
+  const [teacherEmail,setTeacherEmail] = useState("")
 
   const [selectedClass,setSelectedClass] = useState("")
   const [studentName,setStudentName] = useState("")
@@ -28,9 +29,7 @@ export default function Admin() {
     const res = await fetch(
       "https://calia-backend.onrender.com/classes",
       {
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
+        headers:{ Authorization:`Bearer ${token}` }
       }
     )
 
@@ -45,9 +44,7 @@ export default function Admin() {
     const res = await fetch(
       "https://calia-backend.onrender.com/students",
       {
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
+        headers:{ Authorization:`Bearer ${token}` }
       }
     )
 
@@ -61,12 +58,22 @@ export default function Admin() {
 
   }
 
-  const handleCreateClass = async () => {
+  const loadTeachers = async () => {
 
-    if(!className || !classYear){
-      alert("Preencha nome e ano")
-      return
-    }
+    const res = await fetch(
+      "https://calia-backend.onrender.com/teachers",
+      {
+        headers:{ Authorization:`Bearer ${token}` }
+      }
+    )
+
+    const data = await res.json()
+
+    setTeachers(data)
+
+  }
+
+  const handleCreateClass = async () => {
 
     await fetch(
       "https://calia-backend.onrender.com/classes",
@@ -90,17 +97,31 @@ export default function Admin() {
 
   }
 
+  const handleCreateTeacher = async () => {
+
+    await fetch(
+      "https://calia-backend.onrender.com/teachers",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:`Bearer ${token}`
+        },
+        body:JSON.stringify({
+          full_name:teacherName,
+          email:teacherEmail
+        })
+      }
+    )
+
+    setTeacherName("")
+    setTeacherEmail("")
+
+    loadTeachers()
+
+  }
+
   const handleCreateStudent = async () => {
-
-    if(!selectedClass){
-      alert("Selecione a turma")
-      return
-    }
-
-    if(!studentName){
-      alert("Digite o nome do aluno")
-      return
-    }
 
     await fetch(
       "https://calia-backend.onrender.com/students",
@@ -125,11 +146,6 @@ export default function Admin() {
 
   const handleImportStudents = async () => {
 
-    if(!file || !selectedClass){
-      alert("Selecione turma e planilha")
-      return
-    }
-
     const formData = new FormData()
 
     formData.append("class_id",selectedClass)
@@ -150,10 +166,10 @@ export default function Admin() {
 
   }
 
-  const updateStudentStatus = async (studentId,status) => {
+  const saveStudentChanges = async (student) => {
 
     await fetch(
-      `https://calia-backend.onrender.com/students/${studentId}`,
+      `https://calia-backend.onrender.com/students/${student.id}`,
       {
         method:"PUT",
         headers:{
@@ -161,7 +177,9 @@ export default function Admin() {
           Authorization:`Bearer ${token}`
         },
         body:JSON.stringify({
-          status:status
+          name:student.name,
+          status:student.status,
+          class_id:student.class_id
         })
       }
     )
@@ -170,24 +188,19 @@ export default function Admin() {
 
   }
 
-  const moveStudent = async (studentId,newClass) => {
+  const updateStudentField = (index,field,value) => {
 
-    await fetch(
-      `https://calia-backend.onrender.com/students/move/${studentId}?class_id=${newClass}`,
-      {
-        method:"PUT",
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
-      }
-    )
+    const updated = [...students]
 
-    loadStudents()
+    updated[index][field] = value
+
+    setStudents(updated)
 
   }
 
   useEffect(()=>{
     loadClasses()
+    loadTeachers()
   },[])
 
   useEffect(()=>{
@@ -224,6 +237,30 @@ export default function Admin() {
 
       <button onClick={handleCreateClass}>
         Criar Turma
+      </button>
+
+      <hr/>
+
+      <h2>Criar Professor</h2>
+
+      <input
+        placeholder="Nome do professor"
+        value={teacherName}
+        onChange={(e)=>setTeacherName(e.target.value)}
+      />
+
+      <br/><br/>
+
+      <input
+        placeholder="Email"
+        value={teacherEmail}
+        onChange={(e)=>setTeacherEmail(e.target.value)}
+      />
+
+      <br/><br/>
+
+      <button onClick={handleCreateTeacher}>
+        Criar Professor
       </button>
 
       <hr/>
@@ -266,11 +303,11 @@ export default function Admin() {
 
         <hr/>
 
-        <h2>Importar lista de alunos</h2>
+        <h2>Importar alunos por planilha</h2>
 
         <input
           type="file"
-          accept=".csv"
+          accept=".csv,.xlsx"
           onChange={(e)=>setFile(e.target.files[0])}
         />
 
@@ -284,7 +321,7 @@ export default function Admin() {
 
         <h2>Alunos da turma</h2>
 
-        {students.map((s)=>(
+        {students.map((s,index)=>(
           <div
             key={s.id}
             style={{
@@ -295,11 +332,10 @@ export default function Admin() {
             }}
           >
 
-            <strong>{s.name}</strong>
-
-            <br/>
-
-            Status atual: <b>{s.status}</b>
+            <input
+              value={s.name}
+              onChange={(e)=>updateStudentField(index,"name",e.target.value)}
+            />
 
             <br/><br/>
 
@@ -307,7 +343,7 @@ export default function Admin() {
 
             <select
               value={s.status}
-              onChange={(e)=>updateStudentStatus(s.id,e.target.value)}
+              onChange={(e)=>updateStudentField(index,"status",e.target.value)}
             >
 
               <option value="CURSANDO">CURSANDO</option>
@@ -318,13 +354,12 @@ export default function Admin() {
 
             <br/><br/>
 
-            <label>Mover para turma:</label>
+            <label>Turma:</label>
 
             <select
-              onChange={(e)=>moveStudent(s.id,e.target.value)}
+              value={s.class_id}
+              onChange={(e)=>updateStudentField(index,"class_id",e.target.value)}
             >
-
-              <option>Escolha turma</option>
 
               {classes.map(c=>(
                 <option key={c.id} value={c.id}>
@@ -333,6 +368,12 @@ export default function Admin() {
               ))}
 
             </select>
+
+            <br/><br/>
+
+            <button onClick={()=>saveStudentChanges(s)}>
+              Salvar Alterações
+            </button>
 
           </div>
         ))}
