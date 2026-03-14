@@ -99,7 +99,7 @@ setAssessments(filtered)
 
 
 // =======================
-// CREATE ASSESSMENT + ANSWER KEY
+// CREATE ASSESSMENT
 // =======================
 
 const createAssessment = async ()=>{
@@ -148,7 +148,7 @@ setSelectedAssessment(data.id)
 
 
 // =======================
-// OCR
+// OCR CORRECTION
 // =======================
 
 const sendOCR = async ()=>{
@@ -179,18 +179,28 @@ setResult(data.score)
 
 
 // =======================
-// MANUAL
+// MANUAL CORRECTION
 // =======================
 
 const sendManual = async ()=>{
 
-const answersArray = manualAnswers.split(",")
+const answersArray = manualAnswers
+.split(",")
+.map(a=>a.trim().toUpperCase())
+
+const answersDict = {}
+
+answersArray.forEach((a,i)=>{
+
+answersDict[String(i+1)] = a
+
+})
 
 const payload = {
 
 assessment_id:selectedAssessment,
 student_id:selectedStudent,
-answers:answersArray
+answers:answersDict
 
 }
 
@@ -216,6 +226,10 @@ setResult(data.score)
 }
 
 
+// =======================
+// EFFECTS
+// =======================
+
 useEffect(()=>{
 loadClasses()
 },[])
@@ -232,6 +246,9 @@ loadAssessments()
 },[selectedClass])
 
 
+// =======================
+// UI
+// =======================
 
 return(
 
