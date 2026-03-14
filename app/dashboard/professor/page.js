@@ -1,310 +1,404 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect,useState } from "react"
 
-export default function Professor() {
+export default function Professor(){
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("access_token")
-      : null
+const token =
+typeof window !== "undefined"
+? localStorage.getItem("access_token")
+: null
 
-  if(!token){
-    return <div>Carregando...</div>
-  }
+if(!token) return <div>Carregando...</div>
 
-  const [classes,setClasses] = useState([])
-  const [students,setStudents] = useState([])
-  const [assessments,setAssessments] = useState([])
+const [classes,setClasses] = useState([])
+const [students,setStudents] = useState([])
+const [assessments,setAssessments] = useState([])
 
-  const [selectedClass,setSelectedClass] = useState("")
-  const [selectedStudent,setSelectedStudent] = useState("")
-  const [selectedAssessment,setSelectedAssessment] = useState("")
+const [selectedClass,setSelectedClass] = useState("")
+const [selectedStudent,setSelectedStudent] = useState("")
+const [selectedAssessment,setSelectedAssessment] = useState("")
 
-  const [assessmentTitle,setAssessmentTitle] = useState("")
-  const [totalQuestions,setTotalQuestions] = useState("")
+const [answers,setAnswers] = useState(
+Array(10).fill("A")
+)
 
-  const [file,setFile] = useState(null)
-  const [result,setResult] = useState(null)
+const [file,setFile] = useState(null)
 
-  // =============================
-  // CARREGAR TURMAS
-  // =============================
+const [manualAnswers,setManualAnswers] = useState("")
 
-  const loadClasses = async () => {
+const [result,setResult] = useState(null)
 
-    const res = await fetch(
-      "https://calia-backend.onrender.com/classes",
-      {
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
-      }
-    )
+const [assessmentTitle,setAssessmentTitle] = useState("")
 
-    const data = await res.json()
+// ========================
+// LOAD CLASSES
+// ========================
 
-    setClasses(data)
+const loadClasses = async ()=>{
 
-  }
+const res = await fetch(
+"https://calia-backend.onrender.com/classes",
+{
+headers:{Authorization:`Bearer ${token}`}
+}
+)
 
-  // =============================
-  // CARREGAR ALUNOS
-  // =============================
+const data = await res.json()
 
-  const loadStudents = async () => {
+setClasses(data)
 
-    const res = await fetch(
-      "https://calia-backend.onrender.com/students",
-      {
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
-      }
-    )
+}
 
-    const data = await res.json()
+// ========================
+// LOAD STUDENTS
+// ========================
 
-    const filtered = data.filter(
-      s => s.class_id === selectedClass
-    )
+const loadStudents = async ()=>{
 
-    setStudents(filtered)
+const res = await fetch(
+"https://calia-backend.onrender.com/students",
+{
+headers:{Authorization:`Bearer ${token}`}
+}
+)
 
-  }
+const data = await res.json()
 
-  // =============================
-  // CARREGAR AVALIAÇÕES
-  // =============================
+const filtered = data.filter(
+s=>s.class_id===selectedClass
+)
 
-  const loadAssessments = async () => {
+setStudents(filtered)
 
-    const res = await fetch(
-      "https://calia-backend.onrender.com/assessments",
-      {
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
-      }
-    )
+}
 
-    const data = await res.json()
+// ========================
+// LOAD ASSESSMENTS
+// ========================
 
-    const filtered = data.filter(
-      a => a.class_id === selectedClass
-    )
+const loadAssessments = async ()=>{
 
-    setAssessments(filtered)
+const res = await fetch(
+"https://calia-backend.onrender.com/assessments",
+{
+headers:{Authorization:`Bearer ${token}`}
+}
+)
 
-  }
+const data = await res.json()
 
-  // =============================
-  // CRIAR AVALIAÇÃO
-  // =============================
+const filtered = data.filter(
+a=>a.class_id===selectedClass
+)
 
-  const createAssessment = async () => {
+setAssessments(filtered)
 
-    if(!selectedClass){
-      alert("Selecione uma turma")
-      return
-    }
+}
 
-    const res = await fetch(
-      "https://calia-backend.onrender.com/assessments",
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          Authorization:`Bearer ${token}`
-        },
-        body:JSON.stringify({
-          class_id:selectedClass,
-          title:assessmentTitle,
-          total_questions:parseInt(totalQuestions)
-        })
-      }
-    )
+// ========================
+// CREATE ASSESSMENT
+// ========================
 
-    const data = await res.json()
+const createAssessment = async ()=>{
 
-    if(!res.ok){
-      alert(data.detail)
-      return
-    }
+const res = await fetch(
+"https://calia-backend.onrender.com/assessments",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+Authorization:`Bearer ${token}`
+},
+body:JSON.stringify({
+class_id:selectedClass,
+title:assessmentTitle,
+total_questions:10
+})
+}
+)
 
-    alert("Avaliação criada")
+await res.json()
 
-    setAssessmentTitle("")
-    setTotalQuestions("")
+alert("Avaliação criada")
 
-    loadAssessments()
+setAssessmentTitle("")
 
-  }
+loadAssessments()
 
-  // =============================
-  // ENVIAR PROVA PARA OCR
-  // =============================
+}
 
-  const handleUpload = async () => {
+// ========================
+// SAVE ANSWER KEY
+// ========================
 
-    if(!file || !selectedStudent || !selectedAssessment){
+const saveAnswerKey = async ()=>{
 
-      alert("Selecione avaliação, aluno e foto")
+const payload = {
 
-      return
-    }
+assessment_id:selectedAssessment,
 
-    const formData = new FormData()
+answers:answers.map((a,i)=>({
+question_number:i+1,
+correct_answer:a
+}))
 
-    formData.append("assessment_id",selectedAssessment)
-    formData.append("student_id",selectedStudent)
-    formData.append("file",file)
+}
 
-    const res = await fetch(
-      "https://calia-backend.onrender.com/ocr/correct",
-      {
-        method:"POST",
-        headers:{
-          Authorization:`Bearer ${token}`
-        },
-        body:formData
-      }
-    )
+await fetch(
 
-    const data = await res.json()
+"https://calia-backend.onrender.com/assessments/answer-key",
 
-    if(!res.ok){
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+Authorization:`Bearer ${token}`
+},
+body:JSON.stringify(payload)
+}
 
-      alert(data.detail)
+)
 
-      return
-    }
+alert("Gabarito salvo")
 
-    setResult(data.score)
+}
 
-  }
+// ========================
+// OCR CORRECTION
+// ========================
 
-  useEffect(()=>{
-    loadClasses()
-  },[])
+const sendOCR = async ()=>{
 
-  useEffect(()=>{
-    if(selectedClass){
-      loadStudents()
-      loadAssessments()
-    }
-  },[selectedClass])
+const formData = new FormData()
 
-  return (
+formData.append("assessment_id",selectedAssessment)
+formData.append("student_id",selectedStudent)
+formData.append("file",file)
 
-    <div style={{padding:40}}>
+const res = await fetch(
 
-      <h1>Painel Professor</h1>
+"https://calia-backend.onrender.com/ocr/correct",
 
-      <hr/>
+{
+method:"POST",
+headers:{Authorization:`Bearer ${token}`},
+body:formData
+}
 
-      <h3>Turma</h3>
+)
 
-      <select
-        value={selectedClass}
-        onChange={(e)=>setSelectedClass(e.target.value)}
-      >
+const data = await res.json()
 
-        <option value="">Selecione</option>
+setResult(data.score)
 
-        {classes.map(c=>(
-          <option key={c.id} value={c.id}>
-            {c.name} - {c.year}
-          </option>
-        ))}
+}
 
-      </select>
+// ========================
+// MANUAL CORRECTION
+// ========================
 
-      <hr/>
+const sendManual = async ()=>{
 
-      <h3>Criar Avaliação</h3>
+const answersArray = manualAnswers.split(",")
 
-      <input
-        placeholder="Nome da avaliação"
-        value={assessmentTitle}
-        onChange={(e)=>setAssessmentTitle(e.target.value)}
-      />
+const payload = {
 
-      <br/><br/>
+assessment_id:selectedAssessment,
+student_id:selectedStudent,
+answers:answersArray
 
-      <input
-        placeholder="Número de questões"
-        value={totalQuestions}
-        onChange={(e)=>setTotalQuestions(e.target.value)}
-      />
+}
 
-      <br/><br/>
+const res = await fetch(
 
-      <button onClick={createAssessment}>
-        Criar Avaliação
-      </button>
+"https://calia-backend.onrender.com/submit-answers",
 
-      <hr/>
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+Authorization:`Bearer ${token}`
+},
+body:JSON.stringify(payload)
+}
 
-      <h3>Avaliação</h3>
+)
 
-      <select
-        value={selectedAssessment}
-        onChange={(e)=>setSelectedAssessment(e.target.value)}
-      >
+const data = await res.json()
 
-        <option value="">Selecione</option>
+setResult(data.score)
 
-        {assessments.map(a=>(
-          <option key={a.id} value={a.id}>
-            {a.title}
-          </option>
-        ))}
+}
 
-      </select>
+useEffect(()=>{
 
-      <hr/>
+loadClasses()
 
-      <h3>Aluno</h3>
+},[])
 
-      <select
-        value={selectedStudent}
-        onChange={(e)=>setSelectedStudent(e.target.value)}
-      >
+useEffect(()=>{
 
-        <option value="">Selecione</option>
+if(selectedClass){
 
-        {students.map(s=>(
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
+loadStudents()
+loadAssessments()
 
-      </select>
+}
 
-      <br/><br/>
+},[selectedClass])
 
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e)=>setFile(e.target.files[0])}
-      />
+return(
 
-      <br/><br/>
+<div style={{padding:40}}>
 
-      <button onClick={handleUpload}>
-        Corrigir prova
-      </button>
+<h1>Painel Professor</h1>
 
-      {result !== null && (
-        <>
-        <hr/>
-        <h2>Nota: {result}</h2>
-        </>
-      )}
+<hr/>
 
-    </div>
+<h3>Turma</h3>
 
-  )
+<select
+value={selectedClass}
+onChange={(e)=>setSelectedClass(e.target.value)}
+>
+
+<option>Selecione</option>
+
+{classes.map(c=>(
+<option key={c.id} value={c.id}>
+{c.name} - {c.year}
+</option>
+))}
+
+</select>
+
+<hr/>
+
+<h3>Criar Avaliação</h3>
+
+<input
+placeholder="Nome"
+value={assessmentTitle}
+onChange={(e)=>setAssessmentTitle(e.target.value)}
+/>
+
+<button onClick={createAssessment}>
+Criar Avaliação
+</button>
+
+<hr/>
+
+<h3>Avaliação</h3>
+
+<select
+value={selectedAssessment}
+onChange={(e)=>setSelectedAssessment(e.target.value)}
+>
+
+<option>Selecione</option>
+
+{assessments.map(a=>(
+<option key={a.id} value={a.id}>
+{a.title}
+</option>
+))}
+
+</select>
+
+<hr/>
+
+<h3>Gabarito</h3>
+
+{answers.map((a,i)=>(
+
+<select
+key={i}
+value={a}
+onChange={(e)=>{
+
+const updated=[...answers]
+
+updated[i]=e.target.value
+
+setAnswers(updated)
+
+}}
+>
+
+<option>A</option>
+<option>B</option>
+<option>C</option>
+<option>D</option>
+<option>E</option>
+
+</select>
+
+))}
+
+<br/><br/>
+
+<button onClick={saveAnswerKey}>
+Salvar Gabarito
+</button>
+
+<hr/>
+
+<h3>Aluno</h3>
+
+<select
+value={selectedStudent}
+onChange={(e)=>setSelectedStudent(e.target.value)}
+>
+
+<option>Selecione</option>
+
+{students.map(s=>(
+<option key={s.id} value={s.id}>
+{s.name}
+</option>
+))}
+
+</select>
+
+<hr/>
+
+<h3>Correção por Foto</h3>
+
+<input
+type="file"
+onChange={(e)=>setFile(e.target.files[0])}
+/>
+
+<button onClick={sendOCR}>
+Corrigir com OCR
+</button>
+
+<hr/>
+
+<h3>Correção Manual</h3>
+
+<input
+placeholder="A,B,C,D,E,A,B,C,D,E"
+value={manualAnswers}
+onChange={(e)=>setManualAnswers(e.target.value)}
+/>
+
+<button onClick={sendManual}>
+Corrigir Manual
+</button>
+
+{result!==null &&(
+
+<>
+<hr/>
+<h2>Nota: {result}</h2>
+</>
+
+)}
+
+</div>
+
+)
 
 }
