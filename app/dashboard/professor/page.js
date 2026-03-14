@@ -21,13 +21,15 @@ export default function Professor() {
   const [selectedStudent,setSelectedStudent] = useState("")
   const [selectedAssessment,setSelectedAssessment] = useState("")
 
-  const [file,setFile] = useState(null)
+  const [assessmentTitle,setAssessmentTitle] = useState("")
+  const [totalQuestions,setTotalQuestions] = useState("")
 
+  const [file,setFile] = useState(null)
   const [result,setResult] = useState(null)
 
-  // =========================
-  // CARREGAR TURMAS DO PROFESSOR
-  // =========================
+  // =============================
+  // CARREGAR TURMAS
+  // =============================
 
   const loadClasses = async () => {
 
@@ -46,9 +48,9 @@ export default function Professor() {
 
   }
 
-  // =========================
+  // =============================
   // CARREGAR ALUNOS
-  // =========================
+  // =============================
 
   const loadStudents = async () => {
 
@@ -71,9 +73,9 @@ export default function Professor() {
 
   }
 
-  // =========================
+  // =============================
   // CARREGAR AVALIAÇÕES
-  // =========================
+  // =============================
 
   const loadAssessments = async () => {
 
@@ -96,9 +98,52 @@ export default function Professor() {
 
   }
 
-  // =========================
-  // OCR CORREÇÃO
-  // =========================
+  // =============================
+  // CRIAR AVALIAÇÃO
+  // =============================
+
+  const createAssessment = async () => {
+
+    if(!selectedClass){
+      alert("Selecione uma turma")
+      return
+    }
+
+    const res = await fetch(
+      "https://calia-backend.onrender.com/assessments",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:`Bearer ${token}`
+        },
+        body:JSON.stringify({
+          class_id:selectedClass,
+          title:assessmentTitle,
+          total_questions:parseInt(totalQuestions)
+        })
+      }
+    )
+
+    const data = await res.json()
+
+    if(!res.ok){
+      alert(data.detail)
+      return
+    }
+
+    alert("Avaliação criada")
+
+    setAssessmentTitle("")
+    setTotalQuestions("")
+
+    loadAssessments()
+
+  }
+
+  // =============================
+  // ENVIAR PROVA PARA OCR
+  // =============================
 
   const handleUpload = async () => {
 
@@ -175,7 +220,31 @@ export default function Professor() {
 
       </select>
 
+      <hr/>
+
+      <h3>Criar Avaliação</h3>
+
+      <input
+        placeholder="Nome da avaliação"
+        value={assessmentTitle}
+        onChange={(e)=>setAssessmentTitle(e.target.value)}
+      />
+
       <br/><br/>
+
+      <input
+        placeholder="Número de questões"
+        value={totalQuestions}
+        onChange={(e)=>setTotalQuestions(e.target.value)}
+      />
+
+      <br/><br/>
+
+      <button onClick={createAssessment}>
+        Criar Avaliação
+      </button>
+
+      <hr/>
 
       <h3>Avaliação</h3>
 
@@ -194,7 +263,7 @@ export default function Professor() {
 
       </select>
 
-      <br/><br/>
+      <hr/>
 
       <h3>Aluno</h3>
 
