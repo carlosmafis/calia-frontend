@@ -16,24 +16,23 @@ const [students,setStudents] = useState([])
 const [assessments,setAssessments] = useState([])
 
 const [selectedClass,setSelectedClass] = useState("")
-const [selectedStudent,setSelectedStudent] = useState("")
 const [selectedAssessment,setSelectedAssessment] = useState("")
+const [selectedStudent,setSelectedStudent] = useState("")
+
+const [assessmentTitle,setAssessmentTitle] = useState("")
 
 const [answers,setAnswers] = useState(
 Array(10).fill("A")
 )
 
 const [file,setFile] = useState(null)
-
 const [manualAnswers,setManualAnswers] = useState("")
-
 const [result,setResult] = useState(null)
 
-const [assessmentTitle,setAssessmentTitle] = useState("")
 
-// ========================
+// =======================
 // LOAD CLASSES
-// ========================
+// =======================
 
 const loadClasses = async ()=>{
 
@@ -50,9 +49,10 @@ setClasses(data)
 
 }
 
-// ========================
+
+// =======================
 // LOAD STUDENTS
-// ========================
+// =======================
 
 const loadStudents = async ()=>{
 
@@ -73,9 +73,10 @@ setStudents(filtered)
 
 }
 
-// ========================
+
+// =======================
 // LOAD ASSESSMENTS
-// ========================
+// =======================
 
 const loadAssessments = async ()=>{
 
@@ -96,58 +97,31 @@ setAssessments(filtered)
 
 }
 
-// ========================
-// CREATE ASSESSMENT
-// ========================
+
+// =======================
+// CREATE ASSESSMENT + ANSWER KEY
+// =======================
 
 const createAssessment = async ()=>{
 
-const res = await fetch(
-"https://calia-backend.onrender.com/assessments",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-Authorization:`Bearer ${token}`
-},
-body:JSON.stringify({
-class_id:selectedClass,
-title:assessmentTitle,
-total_questions:10
-})
-}
-)
-
-await res.json()
-
-alert("Avaliação criada")
-
-setAssessmentTitle("")
-
-loadAssessments()
-
-}
-
-// ========================
-// SAVE ANSWER KEY
-// ========================
-
-const saveAnswerKey = async ()=>{
-
 const payload = {
 
-assessment_id:selectedAssessment,
+class_id:selectedClass,
 
-answers:answers.map((a,i)=>({
+title:assessmentTitle,
+
+questions:answers.map((a,i)=>({
+
 question_number:i+1,
 correct_answer:a
+
 }))
 
 }
 
-await fetch(
+const res = await fetch(
 
-"https://calia-backend.onrender.com/assessments/answer-key",
+"https://calia-backend.onrender.com/assessments/create-full",
 
 {
 method:"POST",
@@ -160,13 +134,22 @@ body:JSON.stringify(payload)
 
 )
 
-alert("Gabarito salvo")
+const data = await res.json()
+
+alert("Avaliação criada com gabarito")
+
+setAssessmentTitle("")
+
+loadAssessments()
+
+setSelectedAssessment(data.id)
 
 }
 
-// ========================
-// OCR CORRECTION
-// ========================
+
+// =======================
+// OCR
+// =======================
 
 const sendOCR = async ()=>{
 
@@ -194,9 +177,10 @@ setResult(data.score)
 
 }
 
-// ========================
-// MANUAL CORRECTION
-// ========================
+
+// =======================
+// MANUAL
+// =======================
 
 const sendManual = async ()=>{
 
@@ -231,10 +215,9 @@ setResult(data.score)
 
 }
 
+
 useEffect(()=>{
-
 loadClasses()
-
 },[])
 
 useEffect(()=>{
@@ -247,6 +230,8 @@ loadAssessments()
 }
 
 },[selectedClass])
+
+
 
 return(
 
@@ -273,42 +258,19 @@ onChange={(e)=>setSelectedClass(e.target.value)}
 
 </select>
 
+
 <hr/>
 
 <h3>Criar Avaliação</h3>
 
 <input
-placeholder="Nome"
+placeholder="Nome da avaliação"
 value={assessmentTitle}
 onChange={(e)=>setAssessmentTitle(e.target.value)}
 />
 
-<button onClick={createAssessment}>
-Criar Avaliação
-</button>
 
-<hr/>
-
-<h3>Avaliação</h3>
-
-<select
-value={selectedAssessment}
-onChange={(e)=>setSelectedAssessment(e.target.value)}
->
-
-<option>Selecione</option>
-
-{assessments.map(a=>(
-<option key={a.id} value={a.id}>
-{a.title}
-</option>
-))}
-
-</select>
-
-<hr/>
-
-<h3>Gabarito</h3>
+<h4>Gabarito</h4>
 
 {answers.map((a,i)=>(
 
@@ -338,9 +300,30 @@ setAnswers(updated)
 
 <br/><br/>
 
-<button onClick={saveAnswerKey}>
-Salvar Gabarito
+<button onClick={createAssessment}>
+Criar Avaliação + Gabarito
 </button>
+
+
+<hr/>
+
+<h3>Avaliação</h3>
+
+<select
+value={selectedAssessment}
+onChange={(e)=>setSelectedAssessment(e.target.value)}
+>
+
+<option>Selecione</option>
+
+{assessments.map(a=>(
+<option key={a.id} value={a.id}>
+{a.title}
+</option>
+))}
+
+</select>
+
 
 <hr/>
 
@@ -361,9 +344,10 @@ onChange={(e)=>setSelectedStudent(e.target.value)}
 
 </select>
 
+
 <hr/>
 
-<h3>Correção por Foto</h3>
+<h3>Correção OCR</h3>
 
 <input
 type="file"
@@ -373,6 +357,7 @@ onChange={(e)=>setFile(e.target.files[0])}
 <button onClick={sendOCR}>
 Corrigir com OCR
 </button>
+
 
 <hr/>
 
@@ -387,6 +372,7 @@ onChange={(e)=>setManualAnswers(e.target.value)}
 <button onClick={sendManual}>
 Corrigir Manual
 </button>
+
 
 {result!==null &&(
 
