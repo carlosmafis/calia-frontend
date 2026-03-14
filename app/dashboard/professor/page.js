@@ -206,7 +206,7 @@ answers:answersDict
 
 const res = await fetch(
 
-"https://calia-backend.onrender.com/ocr/submit-answers",
+"https://calia-backend.onrender.com/submit-answers",
 
 {
 method:"POST",
