@@ -160,18 +160,19 @@ formData.append("student_id",selectedStudent)
 formData.append("file",file)
 
 const res = await fetch(
-
 "https://calia-backend.onrender.com/ocr/correct",
-
 {
 method:"POST",
-headers:{Authorization:`Bearer ${token}`},
+headers:{
+Authorization:`Bearer ${token}`
+},
 body:formData
 }
-
 )
 
 const data = await res.json()
+
+console.log("OCR RESULT:",data)
 
 setResult(data.score)
 
