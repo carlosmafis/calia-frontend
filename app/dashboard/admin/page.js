@@ -27,6 +27,9 @@ export default function Admin() {
   const [studentName,setStudentName] = useState("")
 
   const [file,setFile] = useState(null)
+  
+  const [subjects,setSubjects] = useState([])
+  const [selectedSubject,setSelectedSubject] = useState("")
 
   // ==============================
   // CARREGAR TURMAS
@@ -90,6 +93,25 @@ export default function Admin() {
   }
 
   // ==============================
+  // CARREGAR DISCIPLINAS
+  // ==============================
+
+  const loadSubjects = async ()=>{
+
+    const res = await fetch(
+      "https://calia-backend.onrender.com/subjects",
+      {
+        headers:{Authorization:`Bearer ${token}`}
+      }
+    )
+    
+    const data = await res.json()
+    
+    setSubjects(data)
+    
+  }
+
+  // ==============================
   // CRIAR TURMA
   // ==============================
 
@@ -135,8 +157,8 @@ export default function Admin() {
 
   const handleCreateTeacher = async () => {
 
-    if(!teacherName || !teacherEmail){
-      alert("Preencha nome e email")
+    if(!teacherName || !teacherEmail || !selectedSubject){
+      alert("Preencha nome, email e disciplina")
       return
     }
 
@@ -152,7 +174,8 @@ export default function Admin() {
           },
           body:JSON.stringify({
             full_name:teacherName,
-            email:teacherEmail
+            email:teacherEmail,
+            subject_id:selectedSubject
           })
         }
       )
@@ -172,6 +195,7 @@ export default function Admin() {
 
       setTeacherName("")
       setTeacherEmail("")
+      setSelectedSubject("")
 
       loadTeachers()
 
@@ -287,6 +311,7 @@ export default function Admin() {
   useEffect(()=>{
     loadClasses()
     loadTeachers()
+    loadSubjects()
   },[])
 
   useEffect(()=>{
@@ -342,6 +367,27 @@ export default function Admin() {
         value={teacherEmail}
         onChange={(e)=>setTeacherEmail(e.target.value)}
       />
+
+      <br/><br/>
+
+      <label>Disciplina</label>
+
+      <br/>
+
+      <select
+        value={selectedSubject}
+        onChange={(e)=>setSelectedSubject(e.target.value)}
+      >
+
+        <option value="">Selecione</option>
+
+        {subjects.map(s=>(
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+
+      </select>
 
       <br/><br/>
 
