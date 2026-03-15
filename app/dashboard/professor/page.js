@@ -25,6 +25,9 @@ const [answers,setAnswers] = useState(
 Array(10).fill("A")
 )
 
+const [detectedAnswers,setDetectedAnswers] = useState({})
+const [debugImage,setDebugImage] = useState(null)
+
 const [file,setFile] = useState(null)
 const [manualAnswers,setManualAnswers] = useState("")
 const [result,setResult] = useState(null)
@@ -173,6 +176,39 @@ body:formData
 const data = await res.json()
 
 console.log("OCR RESULT:",data)
+
+setResult(data.score)
+setDetectedAnswers(data.answers || {})
+setDebugImage(data.debug_image || null)
+
+}
+
+
+// =======================
+// CONFIRM OCR CORRECTION
+// =======================
+
+const confirmCorrection = async ()=>{
+
+const res = await fetch(
+"https://calia-backend.onrender.com/ocr/confirm",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+Authorization:`Bearer ${token}`
+},
+body:JSON.stringify({
+
+assessment_id:selectedAssessment,
+student_id:selectedStudent,
+answers:detectedAnswers
+
+})
+}
+)
+
+const data = await res.json()
 
 setResult(data.score)
 
@@ -375,6 +411,74 @@ onChange={(e)=>setFile(e.target.files[0])}
 <button onClick={sendOCR}>
 Corrigir com OCR
 </button>
+
+
+{/* IMAGEM DE DEBUG OCR */}
+
+{debugImage && (
+
+<div style={{marginTop:20}}>
+
+<h4>Leitura do OCR</h4>
+
+<img
+src={`data:image/jpeg;base64,${debugImage}`}
+style={{maxWidth:"500px"}}
+/>
+
+</div>
+
+)}
+
+
+{/* RESPOSTAS DETECTADAS */}
+
+{Object.keys(detectedAnswers).length > 0 && (
+
+<div style={{marginTop:20}}>
+
+<h4>Respostas Detectadas</h4>
+
+{Object.entries(detectedAnswers).map(([q,res])=>(
+
+<div key={q}>
+
+Questão {q}
+
+<select
+value={res}
+onChange={(e)=>{
+
+const updated={...detectedAnswers}
+updated[q]=e.target.value
+setDetectedAnswers(updated)
+
+}}
+>
+
+<option>A</option>
+<option>B</option>
+<option>C</option>
+<option>D</option>
+<option>E</option>
+<option>BRANCO</option>
+<option>ANULADA</option>
+
+</select>
+
+</div>
+
+))}
+
+<br/>
+
+<button onClick={confirmCorrection}>
+Confirmar Correção
+</button>
+
+</div>
+
+)}
 
 
 <hr/>
