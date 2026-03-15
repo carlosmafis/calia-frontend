@@ -27,9 +27,10 @@ export default function Admin() {
   const [studentName,setStudentName] = useState("")
 
   const [file,setFile] = useState(null)
-  
+
   const [subjects,setSubjects] = useState([])
-  const [selectedSubject,setSelectedSubject] = useState("")
+  const [selectedSubjects,setSelectedSubjects] = useState([])
+  const [newSubject,setNewSubject] = useState("")
 
   // ==============================
   // CARREGAR TURMAS
@@ -104,11 +105,41 @@ export default function Admin() {
         headers:{Authorization:`Bearer ${token}`}
       }
     )
-    
+
     const data = await res.json()
-    
+
     setSubjects(data)
-    
+
+  }
+
+  // ==============================
+  // CRIAR DISCIPLINA
+  // ==============================
+
+  const createSubject = async ()=>{
+
+    if(!newSubject){
+      alert("Digite o nome da disciplina")
+      return
+    }
+
+    await fetch(
+      "https://calia-backend.onrender.com/subjects",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:`Bearer ${token}`
+        },
+        body:JSON.stringify({
+          name:newSubject
+        })
+      }
+    )
+
+    setNewSubject("")
+    loadSubjects()
+
   }
 
   // ==============================
@@ -122,7 +153,7 @@ export default function Admin() {
       return
     }
 
-    const res = await fetch(
+    await fetch(
       "https://calia-backend.onrender.com/classes",
       {
         method:"POST",
@@ -137,17 +168,33 @@ export default function Admin() {
       }
     )
 
-    if(!res.ok){
-      alert("Erro ao criar turma")
-      return
-    }
-
-    alert("Turma criada")
-
     setClassName("")
     setClassYear("")
 
     loadClasses()
+
+  }
+
+  // ==============================
+  // SELECIONAR DISCIPLINAS
+  // ==============================
+
+  const toggleSubject = (id)=>{
+
+    if(selectedSubjects.includes(id)){
+
+      setSelectedSubjects(
+        selectedSubjects.filter(s=>s!==id)
+      )
+
+    }else{
+
+      setSelectedSubjects([
+        ...selectedSubjects,
+        id
+      ])
+
+    }
 
   }
 
@@ -157,55 +204,41 @@ export default function Admin() {
 
   const handleCreateTeacher = async () => {
 
-    if(!teacherName || !teacherEmail || !selectedSubject){
-      alert("Preencha nome, email e disciplina")
+    if(!teacherName || !teacherEmail){
+      alert("Preencha nome e email")
       return
     }
 
-    try{
-
-      const res = await fetch(
-        "https://calia-backend.onrender.com/teachers",
-        {
-          method:"POST",
-          headers:{
-            "Content-Type":"application/json",
-            Authorization:`Bearer ${token}`
-          },
-          body:JSON.stringify({
-            full_name:teacherName,
-            email:teacherEmail,
-            subject_id:selectedSubject
-          })
-        }
-      )
-
-      const data = await res.json()
-
-      if(!res.ok){
-
-        console.error(data)
-
-        alert(data.detail || "Erro ao criar professor")
-
-        return
+    const res = await fetch(
+      "https://calia-backend.onrender.com/teachers",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:`Bearer ${token}`
+        },
+        body:JSON.stringify({
+          full_name:teacherName,
+          email:teacherEmail,
+          subject_ids:selectedSubjects
+        })
       }
+    )
 
-      alert("Professor criado com sucesso")
+    const data = await res.json()
 
-      setTeacherName("")
-      setTeacherEmail("")
-      setSelectedSubject("")
-
-      loadTeachers()
-
-    }catch(err){
-
-      console.error(err)
-
-      alert("Erro de conexão com servidor")
-
+    if(!res.ok){
+      alert(data.detail || "Erro ao criar professor")
+      return
     }
+
+    alert("Professor criado")
+
+    setTeacherName("")
+    setTeacherEmail("")
+    setSelectedSubjects([])
+
+    loadTeachers()
 
   }
 
@@ -328,6 +361,20 @@ export default function Admin() {
 
       <hr/>
 
+      <h2>Criar Disciplina</h2>
+
+      <input
+        placeholder="Nome da disciplina"
+        value={newSubject}
+        onChange={(e)=>setNewSubject(e.target.value)}
+      />
+
+      <button onClick={createSubject}>
+        Criar Disciplina
+      </button>
+
+      <hr/>
+
       <h2>Criar Turma</h2>
 
       <input
@@ -368,28 +415,27 @@ export default function Admin() {
         onChange={(e)=>setTeacherEmail(e.target.value)}
       />
 
-      <br/><br/>
+      <h4>Disciplinas</h4>
 
-      <label>Disciplina</label>
+      {subjects.map(s=>(
+        <div key={s.id}>
+
+          <label>
+
+            <input
+              type="checkbox"
+              checked={selectedSubjects.includes(s.id)}
+              onChange={()=>toggleSubject(s.id)}
+            />
+
+            {s.name}
+
+          </label>
+
+        </div>
+      ))}
 
       <br/>
-
-      <select
-        value={selectedSubject}
-        onChange={(e)=>setSelectedSubject(e.target.value)}
-      >
-
-        <option value="">Selecione</option>
-
-        {subjects.map(s=>(
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-
-      </select>
-
-      <br/><br/>
 
       <button onClick={handleCreateTeacher}>
         Criar Professor
