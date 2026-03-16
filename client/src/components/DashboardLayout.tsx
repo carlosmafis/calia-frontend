@@ -1,5 +1,5 @@
 // Calia Digital — Dashboard Layout
-// Design: Dashboard Geométrico | Sidebar colapsável + header
+// Design: Dashboard Geométrico | Sidebar colapsável + header + perfil
 
 import { useState, type ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,11 +8,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, School, Users, GraduationCap, BookOpen,
   FileText, BarChart3, ScanLine, LogOut, ChevronLeft, ChevronRight,
-  Menu, X, UserCircle, BookMarked, PenLine
+  Menu, X, UserCircle, BookMarked, PenLine, Settings, User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 interface NavItem {
   label: string;
@@ -68,7 +72,7 @@ const roleLabels: Record<string, string> = {
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -166,13 +170,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <motion.aside
         animate={{ width: collapsed ? 72 : 260 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="hidden lg:flex flex-col border-r border-border bg-sidebar shrink-0"
+        className="hidden lg:flex flex-col border-r border-border bg-sidebar shrink-0 relative"
       >
         <SidebarContent />
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute bottom-20 -right-3 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-10"
-          style={{ left: collapsed ? 60 : 248 }}
         >
           {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
         </button>
@@ -218,11 +221,24 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <p className="text-sm font-medium">{user.name || user.email}</p>
               <p className="text-xs text-muted-foreground">{roleLabels[user.role]}</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-primary font-semibold text-sm">
-                {(user.name || user.email || "U").charAt(0).toUpperCase()}
-              </span>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 transition-colors">
+                  <span className="text-primary font-semibold text-sm">
+                    {(user.name || user.email || "U").charAt(0).toUpperCase()}
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card border-border w-48">
+                <DropdownMenuItem onClick={() => setLocation("/dashboard/perfil")}>
+                  <User className="w-4 h-4 mr-2" /> Meu Perfil
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" /> Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 

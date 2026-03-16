@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 
 // Dashboard pages
 import DashboardHome from "./pages/dashboard/DashboardHome";
+import Perfil from "./pages/dashboard/Perfil";
 
 // Super Admin
 import Escolas from "./pages/dashboard/super-admin/Escolas";
@@ -28,6 +29,7 @@ import Disciplinas from "./pages/dashboard/admin/Disciplinas";
 // Shared
 import Turmas from "./pages/dashboard/shared/Turmas";
 import Avaliacoes from "./pages/dashboard/shared/Avaliacoes";
+import AvaliacaoDetalhes from "./pages/dashboard/shared/AvaliacaoDetalhes";
 import Relatorios from "./pages/dashboard/shared/Relatorios";
 
 // Professor
@@ -48,6 +50,11 @@ function Router() {
       {/* Dashboard Home (all roles) */}
       <Route path="/dashboard">
         <ProtectedRoute><DashboardHome /></ProtectedRoute>
+      </Route>
+
+      {/* Perfil (all roles) */}
+      <Route path="/dashboard/perfil">
+        <ProtectedRoute><Perfil /></ProtectedRoute>
       </Route>
 
       {/* Super Admin */}
@@ -75,6 +82,13 @@ function Router() {
       </Route>
       <Route path="/dashboard/avaliacoes">
         <ProtectedRoute allowedRoles={["admin", "super_admin", "professor"]}><Avaliacoes /></ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/avaliacoes/:id">
+        {(params) => (
+          <ProtectedRoute allowedRoles={["admin", "super_admin", "professor"]}>
+            <AvaliacaoDetalhes id={params.id} />
+          </ProtectedRoute>
+        )}
       </Route>
 
       {/* Professor */}
