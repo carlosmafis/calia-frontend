@@ -1,4 +1,4 @@
-// Calia Digital — Super Admin: Escolas (CRUD completo)
+// Calia Digital — Super Admin: Escolas (CRUD completo com criação de admin)
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
@@ -25,8 +25,10 @@ export default function Escolas() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState({ name: "", slug: "", plan: "free" });
+  const [form, setForm] = useState<any>({ name: "", slug: "", plan: "free", admin_name: "", admin_email: "" });
   const [editForm, setEditForm] = useState<any>({ id: "", name: "", slug: "", plan: "free" });
+  const [credentialsDialog, setCredentialsDialog] = useState(false);
+  const [credentials, setCredentials] = useState<any>(null);
 
   const loadSchools = async () => {
     try {
@@ -43,7 +45,7 @@ export default function Escolas() {
 
   const handleNameChange = (name: string) => {
     const slug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    setForm({ ...form, name, slug });
+    setForm({ ...form, name, slug } as any);
   };
 
   const createSchool = async () => {
@@ -51,9 +53,26 @@ export default function Escolas() {
     if (!form.slug.trim()) { toast.error("Informe o slug da escola"); return; }
     setCreating(true);
     try {
-      await apiFetch("/schools", { method: "POST", body: JSON.stringify({ name: form.name, slug: form.slug, plan: form.plan }) });
+      // Se admin_email for fornecido, usar endpoint com-admin
+      let endpoint = "/schools";
+      let body: any = { name: form.name, slug: form.slug, plan: form.plan };
+      
+      if (form.admin_email?.trim()) {
+        endpoint = "/schools/with-admin";
+        body = { ...body, admin_name: form.admin_name, admin_email: form.admin_email };
+      }
+      
+      const result = await apiFetch(endpoint, { method: "POST", body: JSON.stringify(body) });
+      
       toast.success("Escola criada com sucesso");
-      setForm({ name: "", slug: "", plan: "free" });
+      
+      // Se houver credenciais, exibir dialog
+      if (result.credentials) {
+        setCredentials(result.credentials);
+        setCredentialsDialog(true);
+      }
+      
+      setForm({ name: "", slug: "", plan: "free", admin_name: "", admin_email: "" } as any);
       setDialogOpen(false);
       loadSchools();
     } catch (err: any) {
@@ -87,6 +106,11 @@ export default function Escolas() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copiado para a área de transferência");
+  };
+
   const filtered = schools.filter(s => s.name?.toLowerCase().includes(search.toLowerCase()) || s.slug?.toLowerCase().includes(search.toLowerCase()));
 
   const planColors: Record<string, string> = {
@@ -106,23 +130,23 @@ export default function Escolas() {
             <DialogTrigger asChild>
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"><Plus className="w-4 h-4" /> Nova Escola</Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="bg-card border-border max-w-lg">
               <DialogHeader><DialogTitle>Criar Nova Escola</DialogTitle></DialogHeader>
-              <div className="space-y-4 py-4">
+              <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
                 <div className="space-y-2">
                   <Label>Nome da Escola</Label>
-                  <Input placeholder="Ex: Escola Municipal São Paulo" value={form.name} onChange={(e) => handleNameChange(e.target.value)} className="bg-background/50" />
+                  <Input placeholder="Ex: Escola Municipal São Paulo" value={form.name} onChange={(e) => handleNameChange(e.target.value as any)} className="bg-background/50" />
                 </div>
                 <div className="space-y-2">
                   <Label>Slug (identificador único)</Label>
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-muted-foreground" />
-                    <Input placeholder="escola-municipal-sp" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="bg-background/50 font-mono text-sm" />
+                    <Input placeholder="escola-municipal-sp" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value } as any)} className="bg-background/50 font-mono text-sm" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Plano</Label>
-                  <Select value={form.plan} onValueChange={(v) => setForm({ ...form, plan: v })}>
+                  <Select value={form.plan} onValueChange={(v) => setForm({ ...form, plan: v } as any)}>
                     <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="free">Free</SelectItem>
@@ -131,6 +155,19 @@ export default function Escolas() {
                       <SelectItem value="premium">Premium</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                
+                <div className="border-t border-border/30 pt-4">
+                  <p className="text-sm font-medium mb-3">Administrador da Escola</p>
+                  <div className="space-y-2">
+                    <Label>Nome do Admin</Label>
+                    <Input placeholder="Ex: João Silva" value={form.admin_name} onChange={(e) => setForm({ ...form, admin_name: e.target.value } as any)} className="bg-background/50" />
+                  </div>
+                  <div className="space-y-2 mt-2">
+                    <Label>Email do Admin</Label>
+                    <Input type="email" placeholder="admin@escola.com" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value } as any)} className="bg-background/50" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">Um usuário admin será criado automaticamente com senha temporária.</p>
                 </div>
               </div>
               <DialogFooter>
@@ -222,6 +259,59 @@ export default function Escolas() {
         description="Tem certeza que deseja excluir esta escola? Esta ação não pode ser desfeita."
         onConfirm={deleteSchool}
       />
+
+      {/* Credentials Dialog */}
+      <Dialog open={credentialsDialog} onOpenChange={setCredentialsDialog}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader><DialogTitle>Credenciais do Admin da Escola</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-background/50 border border-border rounded-lg p-4 space-y-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="flex-1 bg-background px-3 py-2 rounded text-sm font-mono border border-border/50">
+                    {credentials?.email}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(credentials?.email || "")}
+                    className="h-8 w-8 p-0"
+                  >
+                    📋
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Senha Temporária</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="flex-1 bg-background px-3 py-2 rounded text-sm font-mono border border-border/50">
+                    {credentials?.temp_password}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(credentials?.temp_password || "")}
+                    className="h-8 w-8 p-0"
+                  >
+                    📋
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+              <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                ⚠️ {credentials?.message} Compartilhe estas credenciais com segurança.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setCredentialsDialog(false)} className="bg-primary text-primary-foreground">
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
