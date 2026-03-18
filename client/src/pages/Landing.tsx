@@ -1,4 +1,4 @@
-// Calia Digital — Landing Page
+  // Calia Digital — Landing Page
 // Design: Dashboard Geométrico | Bauhaus funcionalista
 // Dark theme, teal accents, geometric shapes, DM Sans typography
 
