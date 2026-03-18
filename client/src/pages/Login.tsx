@@ -1,6 +1,7 @@
 // Calia Digital — Login Page
 // Design: Dashboard Geométrico | Dark theme, teal accents
 
+
 import { useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -12,16 +13,20 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { setToken } from "@/lib/api";
 import { toast } from "sonner";
 
+
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/hero-landing-AejJu9SksdyRcUCfzjhiz2.webp";
+
 
 // Supabase auth via REST API
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://lhydfllckxuzotondmla.supabase.co";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoeWRmbGxja3h1em90b25kbWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzOTYxNTQsImV4cCI6MjA4Nzk3MjE1NH0.PvwKkuSX8tJXHmoztSodHqMoFCsbJyslhDHnxeAGHjs";
 
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +34,7 @@ export default function Login() {
       toast.error("Preencha todos os campos");
       return;
     }
+
 
     setLoading(true);
     try {
@@ -41,11 +47,14 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
 
+
       const data = await res.json();
+
 
       if (!res.ok) {
         throw new Error(data.error_description || data.msg || "Credenciais inválidas");
       }
+
 
       setToken(data.access_token);
       window.location.href = "/dashboard";
@@ -55,6 +64,7 @@ export default function Login() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background relative flex items-center justify-center p-4">
@@ -69,6 +79,7 @@ export default function Login() {
       />
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background" />
 
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -79,11 +90,12 @@ export default function Login() {
           <ArrowLeft className="w-4 h-4" /> Voltar ao início
         </Link>
 
+
         <Card className="bg-card/80 backdrop-blur-xl border-border/50">
           <CardHeader className="text-center pb-2">
             <div className="flex justify-center mb-4">
               <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/calia-logo_27ab85c2.jpeg"
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/logo-calia_aeef9d89.png"
                 alt="Cal.IA"
                 className="w-16 h-16 rounded-xl object-contain"
               />
@@ -115,29 +127,3 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-background/50"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> Entrando...
-                  </>
-                ) : (
-                  "Entrar"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Cal.IA — Sistema Inteligente de Avaliação
-        </p>
-      </motion.div>
-    </div>
-  );
-}
