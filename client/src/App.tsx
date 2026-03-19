@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // Public pages
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
 
 // Dashboard pages
 import DashboardHome from "./pages/dashboard/DashboardHome";
@@ -46,6 +47,7 @@ function Router() {
       {/* Public */}
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
 
       {/* Dashboard Home (all roles) */}
       <Route path="/dashboard">
