@@ -148,7 +148,7 @@ export default function Turmas() {
                 return (
                   <TableRow key={c.id} className="border-border/30">
                     <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono">{c.year || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground font-mono">{c.year_level ?? "—"}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant="secondary" className="gap-1"><Users className="w-3 h-3" /> {count}</Badge>
                     </TableCell>
@@ -159,7 +159,7 @@ export default function Turmas() {
                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-card border-border">
-                            <DropdownMenuItem onClick={() => { setEditForm({ id: c.id, name: c.name, year: String(c.year || "") }); setEditDialog(true); }}>
+                            <DropdownMenuItem onClick={() => { setEditForm({ id: c.id, name: c.name, year: String(c.year_level || "") }); setEditDialog(true); }}>
                               <Pencil className="w-4 h-4 mr-2" /> Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDeleteTarget(c)} className="text-destructive">
