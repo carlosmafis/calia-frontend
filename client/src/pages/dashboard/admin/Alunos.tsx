@@ -1,4 +1,3 @@
-// Calia Digital — Admin: Alunos (CRUD completo com busca, edição, exclusão, importação CSV)
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
@@ -18,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, GraduationCap, Loader2, MoreHorizontal, Pencil, Trash2, Upload, FileSpreadsheet, Download } from "lucide-react";
+import { Plus, GraduationCap, Loader2, MoreHorizontal, Pencil, Trash2, Upload, FileSpreadsheet, Download, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Alunos() {
@@ -37,6 +36,8 @@ export default function Alunos() {
   const [deleting, setDeleting] = useState(false);
   const csvRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  const [selectedClassForImport, setSelectedClassForImport] = useState("");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const loadData = async () => {
     try {
@@ -53,27 +54,27 @@ export default function Alunos() {
   useEffect(() => { loadData(); }, []);
 
   const createStudent = async () => {
-    if (!form.name || !form.class_id) { toast.error("Preencha nome e turma"); return; }
+    if (!form.name || !form.registration || !form.class_id) { toast.error("Preencha todos os campos"); return; }
     setCreating(true);
     try {
       await apiFetch("/students", {
         method: "POST",
         body: JSON.stringify({
           name: form.name,
-          class_id: form.class_id,
-          registration_number: form.registration
-        })
+          registration_number: form.registration,
+          class_id: form.class_id
+        }),
       });
-      toast.success("Aluno cadastrado com sucesso");
+      toast.success("Aluno cadastrado");
       setForm({ name: "", registration: "", class_id: "" });
       setDialogOpen(false);
       loadData();
-    } catch (err: any) { toast.error(err.message || "Erro ao cadastrar aluno"); }
+    } catch (err: any) { toast.error(err.message || "Erro ao cadastrar"); }
     finally { setCreating(false); }
   };
 
   const updateStudent = async () => {
-    if (!editForm.name) { toast.error("Nome é obrigatório"); return; }
+    if (!editForm.name || !editForm.registration || !editForm.class_id) { toast.error("Preencha todos os campos"); return; }
     setSaving(true);
     try {
       await apiFetch(`/students/${editForm.id}`, {
@@ -126,38 +127,33 @@ export default function Alunos() {
   const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!selectedClassForImport) {
+      toast.error("Selecione uma turma antes de importar");
+      if (csvRef.current) csvRef.current.value = "";
+      return;
+    }
+
     setImporting(true);
     try {
-      const text = await file.text();
-      const lines = text.split("\n").filter((l) => l.trim());
-      const header = lines[0].toLowerCase();
-      const hasHeader = header.includes("nome") || header.includes("name");
-      const dataLines = hasHeader ? lines.slice(1) : lines;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("class_id", selectedClassForImport);
 
-      let imported = 0;
-      for (const line of dataLines) {
-        const parts = line.split(/[,;]/).map((p) => p.trim().replace(/^"|"$/g, ""));
-        if (parts.length < 2) continue;
-        const [name, registration, className] = parts;
-        const cls = classes.find((c) => c.name === className);
-        try {
-          await apiFetch("/students", {
-            method: "POST",
-            body: JSON.stringify({
-              name,
-              registration_number: registration,
-              class_id: cls?.id || classes[0]?.id || ""
-            }),
-          });
-          imported++;
-        } catch {}
-      }
-      toast.success(`${imported} aluno(s) importado(s) com sucesso`);
-      loadData();
-    } catch (err: any) { toast.error("Erro ao importar CSV"); }
-    finally {
-      setImporting(false);
+      const result = await apiFetch("/students/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      toast.success(`${result.message}. ${result.errors?.length || 0} erro(s).`);
       if (csvRef.current) csvRef.current.value = "";
+      setImportDialogOpen(false);
+      setSelectedClassForImport("");
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao importar alunos");
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -180,10 +176,49 @@ export default function Alunos() {
             <Button variant="outline" onClick={downloadTemplate} className="gap-2">
               <Download className="w-4 h-4" /> Modelo
             </Button>
-            <Button variant="outline" onClick={() => csvRef.current?.click()} disabled={importing} className="gap-2">
-              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
-              Importar CSV
-            </Button>
+            <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                  Importar CSV
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border max-w-md">
+                <DialogHeader><DialogTitle>Importar Alunos em Lote</DialogTitle></DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-amber-900 dark:text-amber-200">
+                      Selecione a turma antes de fazer upload. Todos os alunos da planilha serão adicionados a essa turma.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Selecione a Turma</Label>
+                    <Select value={selectedClassForImport} onValueChange={setSelectedClassForImport}>
+                      <SelectTrigger className="bg-background/50">
+                        <SelectValue placeholder="Escolha a turma..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classes.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                  <Button
+                    onClick={() => csvRef.current?.click()}
+                    disabled={!selectedClassForImport || importing}
+                    className="bg-primary text-primary-foreground gap-2"
+                  >
+                    {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    Selecionar Arquivo
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
@@ -243,7 +278,7 @@ export default function Alunos() {
         <EmptyState
           icon={GraduationCap}
           title="Nenhum aluno encontrado"
-          description={search ? "Tente alterar os filtros de busca." : "Cadastre o primeiro aluno ou importe via CSV."}
+          description={search ? "Tente alterar a busca." : "Cadastre o primeiro aluno."}
         />
       ) : (
         <Card className="bg-card/50 border-border/50 overflow-hidden">
@@ -252,51 +287,57 @@ export default function Alunos() {
               <TableRow className="border-border/50 hover:bg-transparent">
                 <TableHead>Nome</TableHead>
                 <TableHead>Matrícula</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Turma</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((s) => {
-                const cls = classes.find((c) => c.id === s.class_id);
-                return (
-                  <TableRow key={s.id} className="border-border/30">
-                    <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-xs">{s.registration_number || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{cls?.name || "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={s.status === "CURSANDO" ? "default" : "secondary"}>{s.status || "CURSANDO"}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-card border-border">
-                          <DropdownMenuItem onClick={() => { setEditForm({ id: s.id, name: s.name, registration: s.registration_number || "", class_id: s.class_id || "" }); setEditDialog(true); }}>
-                            <Pencil className="w-4 h-4 mr-2" /> Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setDeleteTarget(s)} className="text-destructive">
-                            <Trash2 className="w-4 h-4 mr-2" /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {filtered.map((s) => (
+                <TableRow key={s.id} className="border-border/30">
+                  <TableCell className="font-medium">{s.name}</TableCell>
+                  <TableCell className="font-mono text-sm text-muted-foreground">{s.registration_number}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{s.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs gap-1">
+                      <GraduationCap className="w-3 h-3" /> {classes.find((c) => c.id === s.class_id)?.name || "—"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-card border-border">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditForm(s);
+                            setEditDialog(true);
+                          }}
+                          className="gap-2"
+                        >
+                          <Pencil className="w-4 h-4" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setDeleteTarget(s)} className="text-destructive gap-2">
+                          <Trash2 className="w-4 h-4" /> Remover
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </Card>
       )}
 
+      {/* Edit Dialog */}
       <Dialog open={editDialog} onOpenChange={setEditDialog}>
         <DialogContent className="bg-card border-border">
           <DialogHeader><DialogTitle>Editar Aluno</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Nome</Label>
+              <Label>Nome Completo</Label>
               <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="bg-background/50" />
             </div>
             <div className="space-y-2">
@@ -325,11 +366,24 @@ export default function Alunos() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Excluir Aluno"
-        description={`Tem certeza que deseja excluir "${deleteTarget?.name}"? Esta ação não pode ser desfeita.`}
+        title="Remover Aluno"
+        description={`Tem certeza que deseja remover "${deleteTarget?.name}"? Esta ação não pode ser desfeita.`}
         onConfirm={deleteStudent}
         loading={deleting}
       />
+
+      <div className="mt-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-900 dark:text-blue-200">
+        <p className="font-medium mb-2">📋 Como importar alunos em lote:</p>
+        <ol className="list-decimal list-inside space-y-1 text-xs">
+          <li>Clique em "Modelo" para baixar o arquivo CSV</li>
+          <li>Preencha com os dados dos alunos (Nome e Matrícula)</li>
+          <li>Clique em "Importar CSV"</li>
+          <li>Selecione a turma onde os alunos serão adicionados</li>
+          <li>Clique em "Selecionar Arquivo" e escolha o arquivo CSV</li>
+          <li>Email gerado automaticamente: <span className="font-mono font-medium">matricula@escola.com</span></li>
+          <li>Senha padrão: <span className="font-mono font-medium">matricula</span></li>
+        </ol>
+      </div>
     </div>
   );
 }

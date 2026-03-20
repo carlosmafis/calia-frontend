@@ -31,6 +31,11 @@ export default function Professores() {
   const [search, setSearch] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingProfessor, setEditingProfessor] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingSubjects, setEditingSubjects] = useState<string[]>([]);
+  const [editingClasses, setEditingClasses] = useState<string[]>([]);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadData = async () => {
     try {
@@ -50,6 +55,9 @@ export default function Professores() {
 
   const toggleSubject = (id: string) => setSelectedSubjects((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
   const toggleClass = (id: string) => setSelectedClasses((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
+
+  const toggleEditSubject = (id: string) => setEditingSubjects((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
+  const toggleEditClass = (id: string) => setEditingClasses((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
 
   const createProfessor = async () => {
     if (!form.full_name || !form.email) { toast.error("Preencha nome e email"); return; }
@@ -79,6 +87,29 @@ export default function Professores() {
       loadData();
     } catch (err: any) { toast.error(err.message || "Erro ao remover"); }
     finally { setDeleting(false); }
+  };
+
+  const openEditDialog = (professor: any) => {
+    setEditingProfessor(professor);
+    setEditingSubjects((professor.subjects || []).map((s: any) => typeof s === "string" ? s : s.id));
+    setEditingClasses((professor.classes || []).map((c: any) => typeof c === "string" ? c : c.id));
+    setEditDialogOpen(true);
+  };
+
+  const saveEditProfessor = async () => {
+    if (!editingProfessor) return;
+    setSavingEdit(true);
+    try {
+      await apiFetch(`/teachers/${editingProfessor.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ subject_ids: editingSubjects, class_ids: editingClasses }),
+      });
+      toast.success("Professor atualizado");
+      setEditDialogOpen(false);
+      setEditingProfessor(null);
+      loadData();
+    } catch (err: any) { toast.error(err.message || "Erro ao atualizar professor"); }
+    finally { setSavingEdit(false); }
   };
 
   const downloadTemplate = async () => {
@@ -155,7 +186,7 @@ export default function Professores() {
                 <p className="text-xs text-muted-foreground">Senha inicial: <span className="font-mono font-medium">12345678</span>. O professor deve alterá-la no primeiro acesso.</p>
                 {subjects.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Disciplinas</Label>
+                    <Label>Disciplinas (opcional)</Label>
                     <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-background/30 border border-border/30">
                       {subjects.map((s) => (
                         <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -168,7 +199,7 @@ export default function Professores() {
                 )}
                 {classes.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Turmas</Label>
+                    <Label>Turmas (opcional)</Label>
                     <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-background/30 border border-border/30">
                       {classes.map((c) => (
                         <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -248,8 +279,11 @@ export default function Professores() {
                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-card border-border">
-                        <DropdownMenuItem onClick={() => setDeleteTarget(p)} className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" /> Remover
+                        <DropdownMenuItem onClick={() => openEditDialog(p)} className="gap-2">
+                          <Pencil className="w-4 h-4" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setDeleteTarget(p)} className="text-destructive gap-2">
+                          <Trash2 className="w-4 h-4" /> Remover
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -260,6 +294,51 @@ export default function Professores() {
           </Table>
         </Card>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Professor</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <p className="text-sm font-medium mb-2">{editingProfessor?.full_name || editingProfessor?.name}</p>
+              <p className="text-xs text-muted-foreground">{editingProfessor?.email}</p>
+            </div>
+            {subjects.length > 0 && (
+              <div className="space-y-2">
+                <Label>Disciplinas</Label>
+                <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-background/30 border border-border/30">
+                  {subjects.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox checked={editingSubjects.includes(s.id)} onCheckedChange={() => toggleEditSubject(s.id)} />
+                      {s.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            {classes.length > 0 && (
+              <div className="space-y-2">
+                <Label>Turmas</Label>
+                <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-background/30 border border-border/30">
+                  {classes.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox checked={editingClasses.includes(c.id)} onCheckedChange={() => toggleEditClass(c.id)} />
+                      {c.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+            <Button onClick={saveEditProfessor} disabled={savingEdit} className="bg-primary text-primary-foreground">
+              {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={!!deleteTarget}
@@ -276,7 +355,8 @@ export default function Professores() {
           <li>Clique em "Modelo" para baixar o arquivo CSV</li>
           <li>Preencha com os dados dos professores (Nome Completo e Email)</li>
           <li>Clique em "Importar" e selecione o arquivo</li>
-          <li>Senha padrão: <span className="font-mono font-medium">12345678</span></li>
+          <li>Professores criados com senha padrão: <span className="font-mono font-medium">12345678</span></li>
+          <li>Clique em "Editar" para adicionar Turmas e Disciplinas depois</li>
         </ol>
       </div>
     </div>
