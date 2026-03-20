@@ -1,4 +1,3 @@
-// Calia Digital — Professor: Correção OCR (Profissional)
 // IMPORTANTE: A lógica de OCR do backend NÃO foi alterada. Esta página apenas consome a API.
 // Backend endpoint: POST /ocr/correct (FormData: assessment_id, student_id, file)
 import { useEffect, useState, useRef } from "react";
@@ -10,8 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ScanLine, Upload, Loader2, CheckCircle2, XCircle, Image as ImageIcon, RotateCcw, History } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { ScanLine, Upload, Loader2, CheckCircle2, XCircle, Image as ImageIcon, RotateCcw, History, Edit2, Save } from "lucide-react";
 import { toast } from "sonner";
+
+const OPTIONS = ["A", "B", "C", "D", "E"];
 
 export default function CorrecaoOCR() {
   const [assessments, setAssessments] = useState<any[]>([]);
@@ -23,6 +25,10 @@ export default function CorrecaoOCR() {
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [editingAnswers, setEditingAnswers] = useState<Record<string, string>>({});
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,6 +50,7 @@ export default function CorrecaoOCR() {
     if (f) {
       setFile(f);
       setResult(null);
+      setEditingAnswers({});
       const reader = new FileReader();
       reader.onload = () => setPreview(reader.result as string);
       reader.readAsDataURL(f);
@@ -57,6 +64,7 @@ export default function CorrecaoOCR() {
 
     setProcessing(true);
     setResult(null);
+    setEditingAnswers({});
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -68,6 +76,19 @@ export default function CorrecaoOCR() {
         body: formData,
       });
       setResult(data);
+
+      // Inicializar respostas editáveis com as respostas do OCR
+      const initialAnswers: Record<string, string> = {};
+      if (data.details) {
+        data.details.forEach((d: any) => {
+          initialAnswers[d.question || (data.details.indexOf(d) + 1)] = d.student_answer;
+        });
+      } else if (data.answers) {
+        Object.entries(data.answers).forEach(([num, ans]) => {
+          initialAnswers[num] = ans as string;
+        });
+      }
+      setEditingAnswers(initialAnswers);
 
       // Add to local history
       const studentName = students.find(s => s.id === selectedStudent)?.name || "Aluno";
@@ -87,7 +108,33 @@ export default function CorrecaoOCR() {
     setPreview(null);
     setResult(null);
     setSelectedStudent("");
+    setEditingAnswers({});
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const confirmCorrection = async () => {
+    if (!selectedAssessment || !selectedStudent) {
+      toast.error("Dados incompletos");
+      return;
+    }
+
+    setConfirming(true);
+    try {
+      await apiFetch("/ocr/confirm", {
+        method: "POST",
+        body: JSON.stringify({
+          assessment_id: selectedAssessment,
+          student_id: selectedStudent,
+          answers: editingAnswers,
+        }),
+      });
+      toast.success("Correção confirmada e salva!");
+      resetForm();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao confirmar correção");
+    } finally {
+      setConfirming(false);
+    }
   };
 
   const selectedAssessmentObj = assessments.find((a) => a.id === selectedAssessment);
@@ -259,10 +306,20 @@ export default function CorrecaoOCR() {
                   </div>
                 )}
 
-                {/* Answers detail with comparison */}
+                {/* Answers detail with comparison and edit */}
                 {result.details ? (
                   <div>
-                    <p className="text-sm font-medium mb-2">Detalhes por Questão</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium">Detalhes por Questão</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditDialogOpen(true)}
+                        className="gap-1 text-xs"
+                      >
+                        <Edit2 className="w-3 h-3" /> Editar Respostas
+                      </Button>
+                    </div>
                     <Table>
                       <TableHeader>
                         <TableRow className="border-border/50 hover:bg-transparent">
@@ -277,13 +334,13 @@ export default function CorrecaoOCR() {
                           <TableRow key={i} className="border-border/30">
                             <TableCell className="font-mono text-muted-foreground">{d.question || i + 1}</TableCell>
                             <TableCell className="font-mono font-medium">
-                              {d.student_answer === "BRANCO" ? <span className="text-yellow-400">BRANCO</span>
-                                : d.student_answer === "ANULADA" ? <span className="text-red-400">ANULADA</span>
-                                : <span>{d.student_answer}</span>}
+                              {editingAnswers[d.question || (i + 1)] === "BRANCO" ? <span className="text-yellow-400">BRANCO</span>
+                                : editingAnswers[d.question || (i + 1)] === "ANULADA" ? <span className="text-red-400">ANULADA</span>
+                                : <span>{editingAnswers[d.question || (i + 1)]}</span>}
                             </TableCell>
                             <TableCell className="font-mono text-muted-foreground">{d.correct_answer}</TableCell>
                             <TableCell className="text-center">
-                              {d.correct ? <CheckCircle2 className="w-4 h-4 text-green-400 mx-auto" /> : <XCircle className="w-4 h-4 text-red-400 mx-auto" />}
+                              {editingAnswers[d.question || (i + 1)] === d.correct_answer ? <CheckCircle2 className="w-4 h-4 text-green-400 mx-auto" /> : <XCircle className="w-4 h-4 text-red-400 mx-auto" />}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -292,7 +349,17 @@ export default function CorrecaoOCR() {
                   </div>
                 ) : result.answers ? (
                   <div>
-                    <p className="text-sm font-medium mb-2">Respostas Detectadas</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium">Respostas Detectadas</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditDialogOpen(true)}
+                        className="gap-1 text-xs"
+                      >
+                        <Edit2 className="w-3 h-3" /> Editar Respostas
+                      </Button>
+                    </div>
                     <Table>
                       <TableHeader>
                         <TableRow className="border-border/50 hover:bg-transparent">
@@ -301,13 +368,13 @@ export default function CorrecaoOCR() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {Object.entries(result.answers).map(([num, ans]) => (
+                        {Object.entries(editingAnswers).map(([num, ans]) => (
                           <TableRow key={num} className="border-border/30">
                             <TableCell className="font-mono text-muted-foreground">{num}</TableCell>
                             <TableCell className="font-mono font-medium">
-                              {(ans as string) === "BRANCO" ? <span className="text-yellow-400">BRANCO</span>
-                                : (ans as string) === "ANULADA" ? <span className="text-red-400">ANULADA</span>
-                                : <span>{ans as string}</span>}
+                              {ans === "BRANCO" ? <span className="text-yellow-400">BRANCO</span>
+                                : ans === "ANULADA" ? <span className="text-red-400">ANULADA</span>
+                                : <span>{ans}</span>}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -315,6 +382,19 @@ export default function CorrecaoOCR() {
                     </Table>
                   </div>
                 ) : null}
+
+                {/* Confirm Button */}
+                <Button
+                  onClick={confirmCorrection}
+                  disabled={confirming}
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+                >
+                  {confirming ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+                  ) : (
+                    <><Save className="w-4 h-4" /> Confirmar e Salvar Correção</>
+                  )}
+                </Button>
               </div>
             ) : (
               <div className="py-16 text-center">
@@ -330,6 +410,51 @@ export default function CorrecaoOCR() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Respostas do OCR</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              {Object.entries(editingAnswers).map(([num, ans]) => (
+                <div key={num} className="space-y-2">
+                  <Label>Questão {num}</Label>
+                  <div className="flex gap-1 flex-wrap">
+                    {["BRANCO", "ANULADA", ...OPTIONS].map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setEditingAnswers((prev) => ({ ...prev, [num]: opt }))}
+                        className={`flex-1 min-w-12 h-10 rounded text-sm font-mono font-medium transition-all ${
+                          editingAnswers[num] === opt
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-background/50 text-muted-foreground hover:bg-accent border border-border/50"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button
+              onClick={() => setEditDialogOpen(false)}
+              className="bg-primary text-primary-foreground"
+            >
+              Pronto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
