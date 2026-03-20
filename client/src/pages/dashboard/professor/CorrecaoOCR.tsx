@@ -203,7 +203,7 @@ export default function CorrecaoOCR() {
               </div>
               <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-white">{Math.round((correctedCount / filteredStudents.length) * 100)}%</p>
+                  <p className="text-3xl font-bold text-white">{filteredStudents.length > 0 ? Math.round((correctedCount / filteredStudents.length) * 100) : 0}%</p>
                   <p className="text-xs text-blue-100">Completo</p>
                 </div>
               </div>
