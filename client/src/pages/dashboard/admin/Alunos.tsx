@@ -56,7 +56,14 @@ export default function Alunos() {
     if (!form.name || !form.class_id) { toast.error("Preencha nome e turma"); return; }
     setCreating(true);
     try {
-      await apiFetch("/students", { method: "POST", body: JSON.stringify(form) });
+      await apiFetch("/students", {
+        method: "POST",
+        body: JSON.stringify({
+          name: form.name,
+          class_id: form.class_id,
+          registration_number: form.registration
+        })
+      });
       toast.success("Aluno cadastrado com sucesso");
       setForm({ name: "", registration: "", class_id: "" });
       setDialogOpen(false);
@@ -71,7 +78,11 @@ export default function Alunos() {
     try {
       await apiFetch(`/students/${editForm.id}`, {
         method: "PUT",
-        body: JSON.stringify({ name: editForm.name, registration: editForm.registration, class_id: editForm.class_id }),
+        body: JSON.stringify({
+          name: editForm.name,
+          registration_number: editForm.registration,
+          class_id: editForm.class_id
+        }),
       });
       toast.success("Aluno atualizado");
       setEditDialog(false);
@@ -112,7 +123,11 @@ export default function Alunos() {
         try {
           await apiFetch("/students", {
             method: "POST",
-            body: JSON.stringify({ name, registration, class_id: cls?.id || classes[0]?.id || "" }),
+            body: JSON.stringify({
+              name,
+              registration_number: registration,
+              class_id: cls?.id || classes[0]?.id || ""
+            }),
           });
           imported++;
         } catch {}
@@ -131,7 +146,7 @@ export default function Alunos() {
     .filter((s) => {
       if (!search) return true;
       const q = search.toLowerCase();
-      return (s.name || "").toLowerCase().includes(q) || (s.registration || "").toLowerCase().includes(q);
+      return (s.name || "").toLowerCase().includes(q) || (s.registration_number || "").toLowerCase().includes(q);
     });
 
   return (
@@ -185,7 +200,6 @@ export default function Alunos() {
         }
       />
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome ou matrícula..." className="sm:w-72" />
         <Select value={filterClass} onValueChange={setFilterClass}>
@@ -226,7 +240,7 @@ export default function Alunos() {
                 return (
                   <TableRow key={s.id} className="border-border/30">
                     <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-xs">{s.registration || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-xs">{s.registration_number || "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{cls?.name || "—"}</TableCell>
                     <TableCell>
                       <Badge variant={s.status === "CURSANDO" ? "default" : "secondary"}>{s.status || "CURSANDO"}</Badge>
@@ -237,7 +251,7 @@ export default function Alunos() {
                           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-card border-border">
-                          <DropdownMenuItem onClick={() => { setEditForm({ id: s.id, name: s.name, registration: s.registration || "", class_id: s.class_id || "" }); setEditDialog(true); }}>
+                          <DropdownMenuItem onClick={() => { setEditForm({ id: s.id, name: s.name, registration: s.registration_number || "", class_id: s.class_id || "" }); setEditDialog(true); }}>
                             <Pencil className="w-4 h-4 mr-2" /> Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setDeleteTarget(s)} className="text-destructive">
@@ -254,7 +268,6 @@ export default function Alunos() {
         </Card>
       )}
 
-      {/* Edit Dialog */}
       <Dialog open={editDialog} onOpenChange={setEditDialog}>
         <DialogContent className="bg-card border-border">
           <DialogHeader><DialogTitle>Editar Aluno</DialogTitle></DialogHeader>
@@ -286,7 +299,6 @@ export default function Alunos() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
