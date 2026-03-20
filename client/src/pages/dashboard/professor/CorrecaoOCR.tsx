@@ -110,14 +110,18 @@ export default function CorrecaoOCR() {
     if (!result || !uploadingStudent) return;
     setConfirming(true);
     try {
-      const answers = Object.values(editingAnswers);
+      // Converter editingAnswers (objeto com índices) para dict com chaves numéricas
+      const answersDict: Record<string, string> = {};
+      Object.entries(editingAnswers).forEach(([key, value]) => {
+        answersDict[String(parseInt(key) + 1)] = value;
+      });
+      
       await apiFetch("/ocr/confirm", {
         method: "POST",
         body: JSON.stringify({
           assessment_id: selectedAssessment,
           student_id: uploadingStudent,
-          answers,
-          score: result.score,
+          answers: answersDict,
         }),
       });
 
@@ -335,6 +339,16 @@ export default function CorrecaoOCR() {
                             </div>
                           ) : (
                             <div className="space-y-4 py-4">
+                              {result.debug_image && (
+                                <div className="space-y-2">
+                                  <Label className="text-base">Imagem Processada (Debug)</Label>
+                                  <img
+                                    src={`data:image/jpeg;base64,${result.debug_image}`}
+                                    alt="Debug OCR"
+                                    className="w-full rounded-lg border border-border/50 max-h-96 object-contain"
+                                  />
+                                </div>
+                              )}
                               <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                                 <p className="text-sm font-medium text-green-900 dark:text-green-200">
                                   ✓ OCR Processado com Sucesso
