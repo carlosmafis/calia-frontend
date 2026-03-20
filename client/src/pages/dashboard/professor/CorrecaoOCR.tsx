@@ -90,9 +90,13 @@ export default function CorrecaoOCR() {
         body: formData,
       });
       setResult(data);
+      // Converter answers de objeto para array se necessário
+      const answersArray = Array.isArray(data.answers)
+        ? data.answers
+        : Object.values(data.answers || {});
       setEditingAnswers(
         Object.fromEntries(
-          (data.answers || []).map((a: any, i: number) => [i, a])
+          answersArray.map((a: any, i: number) => [i, a])
         )
       );
     } catch (err: any) {
@@ -343,7 +347,7 @@ export default function CorrecaoOCR() {
                               <div className="space-y-2">
                                 <Label className="text-base">Respostas Detectadas</Label>
                                 <div className="grid grid-cols-5 gap-2">
-                                  {(result.answers || []).map((answer: string, i: number) => (
+                                  {(Array.isArray(result.answers) ? result.answers : Object.values(result.answers || {})).map((answer: string, i: number) => (
                                     <Button
                                       key={i}
                                       variant={editingAnswers[i] === answer ? "default" : "outline"}
