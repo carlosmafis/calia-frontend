@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, GraduationCap, Loader2, MoreHorizontal, Pencil, Trash2, Upload, FileSpreadsheet } from "lucide-react";
+import { Plus, GraduationCap, Loader2, MoreHorizontal, Pencil, Trash2, Upload, FileSpreadsheet, Download } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Alunos() {
@@ -103,6 +103,26 @@ export default function Alunos() {
     finally { setDeleting(false); }
   };
 
+  const downloadTemplate = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "https://calia-backend.onrender.com"}/templates/students`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+      });
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "modelo_alunos.csv";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Modelo baixado!");
+    } catch (err: any) {
+      toast.error("Erro ao baixar modelo");
+    }
+  };
+
   const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -157,6 +177,9 @@ export default function Alunos() {
         actions={
           <div className="flex items-center gap-2">
             <input ref={csvRef} type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
+            <Button variant="outline" onClick={downloadTemplate} className="gap-2">
+              <Download className="w-4 h-4" /> Modelo
+            </Button>
             <Button variant="outline" onClick={() => csvRef.current?.click()} disabled={importing} className="gap-2">
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
               Importar CSV

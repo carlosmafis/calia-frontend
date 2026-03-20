@@ -1,5 +1,4 @@
-// Calia Digital — Admin: Professores com CRUD completo
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
 import SearchInput from "@/components/SearchInput";
@@ -14,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, UserCircle, Loader2, MoreHorizontal, Pencil, Trash2, BookOpen, GraduationCap } from "lucide-react";
+import { Plus, UserCircle, Loader2, MoreHorizontal, Pencil, Trash2, BookOpen, GraduationCap, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Professores() {
@@ -30,6 +29,8 @@ export default function Professores() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = async () => {
     try {
@@ -78,6 +79,50 @@ export default function Professores() {
       loadData();
     } catch (err: any) { toast.error(err.message || "Erro ao remover"); }
     finally { setDeleting(false); }
+  };
+
+  const downloadTemplate = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "https://calia-backend.onrender.com"}/templates/teachers`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+      });
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "modelo_professores.csv";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Modelo baixado!");
+    } catch (err: any) {
+      toast.error("Erro ao baixar modelo");
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await apiFetch("/teachers/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      toast.success(`${result.message}. ${result.errors?.length || 0} erro(s).`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao importar professores");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const filtered = professors.filter((p) => {
@@ -148,7 +193,16 @@ export default function Professores() {
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar professor..." className="sm:w-72" />
-        <div className="text-sm text-muted-foreground self-center ml-auto">{filtered.length} resultado(s)</div>
+        <div className="flex gap-2 ml-auto">
+          <Button variant="outline" size="sm" onClick={downloadTemplate} className="gap-2">
+            <Download className="w-4 h-4" /> Modelo
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            Importar
+          </Button>
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+        </div>
       </div>
 
       {loading ? (
@@ -215,6 +269,16 @@ export default function Professores() {
         onConfirm={deleteProfessor}
         loading={deleting}
       />
+
+      <div className="mt-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-900 dark:text-blue-200">
+        <p className="font-medium mb-2">📋 Como importar professores em lote:</p>
+        <ol className="list-decimal list-inside space-y-1 text-xs">
+          <li>Clique em "Modelo" para baixar o arquivo CSV</li>
+          <li>Preencha com os dados dos professores (Nome Completo e Email)</li>
+          <li>Clique em "Importar" e selecione o arquivo</li>
+          <li>Senha padrão: <span className="font-mono font-medium">12345678</span></li>
+        </ol>
+      </div>
     </div>
   );
 }
