@@ -113,7 +113,7 @@ export default function Alunos() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "modelo_alunos.csv";
+      a.download = "modelo_alunos.xlsx";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -172,9 +172,9 @@ export default function Alunos() {
         description={`${students.length} aluno(s) cadastrado(s)`}
         actions={
           <div className="flex items-center gap-2">
-            <input ref={csvRef} type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
+            <input ref={csvRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleCSVImport} className="hidden" />
             <Button variant="outline" onClick={downloadTemplate} className="gap-2">
-              <Download className="w-4 h-4" /> Modelo
+              <Download className="w-4 h-4" /> Modelo (Excel)
             </Button>
             <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
               <DialogTrigger asChild>

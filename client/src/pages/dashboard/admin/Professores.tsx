@@ -121,7 +121,7 @@ export default function Professores() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "modelo_professores.csv";
+      a.download = "modelo_professores.xlsx";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -226,13 +226,13 @@ export default function Professores() {
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar professor..." className="sm:w-72" />
         <div className="flex gap-2 ml-auto">
           <Button variant="outline" size="sm" onClick={downloadTemplate} className="gap-2">
-            <Download className="w-4 h-4" /> Modelo
+            <Download className="w-4 h-4" /> Modelo (Excel)
           </Button>
           <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             Importar
           </Button>
-          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
         </div>
       </div>
 
