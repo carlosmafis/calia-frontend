@@ -69,7 +69,7 @@ export default function CorrecaoOCR() {
         results.forEach((result: any) => {
           if (result.student_id && result.score !== null && result.score !== undefined) {
             // Converter score de 0-100 para 0-10
-            const scoreIn10 = Math.round((result.score / 100) * 10 * 10) / 10; // Arredondar para 1 casa decimal
+            const scoreIn10 = result.score / 10; // Simples: 100 vira 10, 90 vira 9, etc
             status[result.student_id] = {
               status: "corrected",
               score: scoreIn10,
@@ -386,7 +386,7 @@ export default function CorrecaoOCR() {
                                   ✓ OCR Processado com Sucesso
                                 </p>
                                 <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">
-                                  Nota: {Math.round((result.score / 100) * 10 * 10) / 10}/10
+                                  Nota: {(result.score / 10).toFixed(1)}/10
                                 </p>
                               </div>
 

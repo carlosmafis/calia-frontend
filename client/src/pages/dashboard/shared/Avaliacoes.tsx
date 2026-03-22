@@ -20,7 +20,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Loader2, Calendar, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { Plus, FileText, Loader2, Calendar, MoreHorizontal, Eye, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -46,6 +46,12 @@ export default function Avaliacoes() {
     total_questions: "10",
   });
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    total_questions: "10",
+  });
+  const [editAnswers, setEditAnswers] = useState<Record<number, string>>({});
 
   const loadData = async () => {
     try {
@@ -108,6 +114,42 @@ export default function Avaliacoes() {
       loadData();
     } catch (err: any) { toast.error(err.message || "Erro ao remover"); }
     finally { setDeleting(false); }
+  };
+
+  const startEdit = (assessment: any) => {
+    setEditingId(assessment.id);
+    setEditForm({ title: assessment.title, total_questions: String(assessment.total_questions || 10) });
+    setEditAnswers({});
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !editForm.title) {
+      toast.error("Preencha o título");
+      return;
+    }
+    const totalQ = parseInt(editForm.total_questions) || 10;
+    const questions = Array.from({ length: totalQ }, (_, i) => ({
+      question_number: i + 1,
+      correct_answer: editAnswers[i + 1] || "A",
+    }));
+
+    setCreating(true);
+    try {
+      await apiFetch(`/assessments/${editingId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          title: editForm.title,
+          questions,
+        }),
+      });
+      toast.success("Avaliação atualizada com sucesso");
+      setEditingId(null);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar avaliação");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const canCreate = user?.role === "professor" || user?.role === "admin" || user?.role === "super_admin";
@@ -269,6 +311,9 @@ export default function Avaliacoes() {
                           <DropdownMenuItem onClick={() => navigate(`/dashboard/avaliacoes/${a.id}`)}>
                             <Eye className="w-4 h-4 mr-2" /> Ver Detalhes
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => startEdit(a)}>
+                            <Edit2 className="w-4 h-4 mr-2" /> Editar
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setDeleteTarget(a)} className="text-destructive">
                             <Trash2 className="w-4 h-4 mr-2" /> Excluir
                           </DropdownMenuItem>
@@ -282,6 +327,63 @@ export default function Avaliacoes() {
           </Table>
         </Card>
       )}
+
+      <Dialog open={!!editingId} onOpenChange={(open) => !open && setEditingId(null)}>
+        <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Avaliação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input
+                placeholder="Ex: Prova de Matemática - Bimestre 1"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Número de Questões</Label>
+              <Input
+                type="number" min="1" max="50"
+                value={editForm.total_questions}
+                onChange={(e) => setEditForm({ ...editForm, total_questions: e.target.value })}
+                className="bg-background/50 w-32"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Gabarito</Label>
+              <div className="grid sm:grid-cols-2 gap-2 p-4 rounded-lg bg-background/30 border border-border/30">
+                {Array.from({ length: parseInt(editForm.total_questions) || 10 }, (_, i) => i + 1).map((num) => (
+                  <div key={num} className="flex items-center gap-2">
+                    <span className="w-7 text-xs font-mono text-muted-foreground text-right">{num}.</span>
+                    <div className="flex gap-1">
+                      {OPTIONS.map((opt) => (
+                        <button
+                          key={opt} type="button"
+                          onClick={() => setEditAnswers((prev) => ({ ...prev, [num]: opt }))}
+                          className={`w-8 h-8 rounded text-xs font-mono font-medium transition-all ${
+                            editAnswers[num] === opt
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-background/50 text-muted-foreground hover:bg-accent border border-border/50"
+                          }`}
+                        >{opt}</button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+            <Button onClick={saveEdit} disabled={creating} className="bg-primary text-primary-foreground">
+              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={!!deleteTarget}
