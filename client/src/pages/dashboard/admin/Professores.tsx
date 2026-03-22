@@ -1,5 +1,4 @@
-// Calia Digital — Admin: Professores com CRUD completo
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
 import SearchInput from "@/components/SearchInput";
@@ -14,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, UserCircle, Loader2, MoreHorizontal, Pencil, Trash2, BookOpen, GraduationCap } from "lucide-react";
+import { Plus, UserCircle, Loader2, MoreHorizontal, Pencil, Trash2, BookOpen, GraduationCap, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Professores() {
@@ -30,6 +29,13 @@ export default function Professores() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingProfessor, setEditingProfessor] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingSubjects, setEditingSubjects] = useState<string[]>([]);
+  const [editingClasses, setEditingClasses] = useState<string[]>([]);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadData = async () => {
     try {
@@ -49,6 +55,9 @@ export default function Professores() {
 
   const toggleSubject = (id: string) => setSelectedSubjects((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
   const toggleClass = (id: string) => setSelectedClasses((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
+
+  const toggleEditSubject = (id: string) => setEditingSubjects((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
+  const toggleEditClass = (id: string) => setEditingClasses((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
 
   const createProfessor = async () => {
     if (!form.full_name || !form.email) { toast.error("Preencha nome e email"); return; }
@@ -78,6 +87,73 @@ export default function Professores() {
       loadData();
     } catch (err: any) { toast.error(err.message || "Erro ao remover"); }
     finally { setDeleting(false); }
+  };
+
+  const openEditDialog = (professor: any) => {
+    setEditingProfessor(professor);
+    setEditingSubjects((professor.subjects || []).map((s: any) => typeof s === "string" ? s : s.id));
+    setEditingClasses((professor.classes || []).map((c: any) => typeof c === "string" ? c : c.id));
+    setEditDialogOpen(true);
+  };
+
+  const saveEditProfessor = async () => {
+    if (!editingProfessor) return;
+    setSavingEdit(true);
+    try {
+      await apiFetch(`/teachers/${editingProfessor.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ subject_ids: editingSubjects, class_ids: editingClasses }),
+      });
+      toast.success("Professor atualizado");
+      setEditDialogOpen(false);
+      setEditingProfessor(null);
+      loadData();
+    } catch (err: any) { toast.error(err.message || "Erro ao atualizar professor"); }
+    finally { setSavingEdit(false); }
+  };
+
+  const downloadTemplate = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "https://calia-backend.onrender.com"}/templates/teachers`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+      });
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "modelo_professores.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Modelo baixado!");
+    } catch (err: any) {
+      toast.error("Erro ao baixar modelo");
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await apiFetch("/teachers/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      toast.success(`${result.message}. ${result.errors?.length || 0} erro(s).`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao importar professores");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const filtered = professors.filter((p) => {
@@ -110,7 +186,7 @@ export default function Professores() {
                 <p className="text-xs text-muted-foreground">Senha inicial: <span className="font-mono font-medium">12345678</span>. O professor deve alterá-la no primeiro acesso.</p>
                 {subjects.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Disciplinas</Label>
+                    <Label>Disciplinas (opcional)</Label>
                     <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-background/30 border border-border/30">
                       {subjects.map((s) => (
                         <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -123,7 +199,7 @@ export default function Professores() {
                 )}
                 {classes.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Turmas</Label>
+                    <Label>Turmas (opcional)</Label>
                     <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-background/30 border border-border/30">
                       {classes.map((c) => (
                         <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -148,7 +224,16 @@ export default function Professores() {
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar professor..." className="sm:w-72" />
-        <div className="text-sm text-muted-foreground self-center ml-auto">{filtered.length} resultado(s)</div>
+        <div className="flex gap-2 ml-auto">
+          <Button variant="outline" size="sm" onClick={downloadTemplate} className="gap-2">
+            <Download className="w-4 h-4" /> Modelo (Excel)
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            Importar
+          </Button>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
+        </div>
       </div>
 
       {loading ? (
@@ -194,8 +279,11 @@ export default function Professores() {
                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-card border-border">
-                        <DropdownMenuItem onClick={() => setDeleteTarget(p)} className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" /> Remover
+                        <DropdownMenuItem onClick={() => openEditDialog(p)} className="gap-2">
+                          <Pencil className="w-4 h-4" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setDeleteTarget(p)} className="text-destructive gap-2">
+                          <Trash2 className="w-4 h-4" /> Remover
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -207,6 +295,51 @@ export default function Professores() {
         </Card>
       )}
 
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Professor</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <p className="text-sm font-medium mb-2">{editingProfessor?.full_name || editingProfessor?.name}</p>
+              <p className="text-xs text-muted-foreground">{editingProfessor?.email}</p>
+            </div>
+            {subjects.length > 0 && (
+              <div className="space-y-2">
+                <Label>Disciplinas</Label>
+                <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-background/30 border border-border/30">
+                  {subjects.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox checked={editingSubjects.includes(s.id)} onCheckedChange={() => toggleEditSubject(s.id)} />
+                      {s.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            {classes.length > 0 && (
+              <div className="space-y-2">
+                <Label>Turmas</Label>
+                <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-background/30 border border-border/30">
+                  {classes.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox checked={editingClasses.includes(c.id)} onCheckedChange={() => toggleEditClass(c.id)} />
+                      {c.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+            <Button onClick={saveEditProfessor} disabled={savingEdit} className="bg-primary text-primary-foreground">
+              {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
@@ -215,6 +348,17 @@ export default function Professores() {
         onConfirm={deleteProfessor}
         loading={deleting}
       />
+
+      <div className="mt-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-900 dark:text-blue-200">
+        <p className="font-medium mb-2">📋 Como importar professores em lote:</p>
+        <ol className="list-decimal list-inside space-y-1 text-xs">
+          <li>Clique em "Modelo" para baixar o arquivo CSV</li>
+          <li>Preencha com os dados dos professores (Nome Completo e Email)</li>
+          <li>Clique em "Importar" e selecione o arquivo</li>
+          <li>Professores criados com senha padrão: <span className="font-mono font-medium">12345678</span></li>
+          <li>Clique em "Editar" para adicionar Turmas e Disciplinas depois</li>
+        </ol>
+      </div>
     </div>
   );
 }

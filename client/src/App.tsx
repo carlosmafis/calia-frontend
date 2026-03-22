@@ -32,7 +32,7 @@ import Disciplinas from "./pages/dashboard/admin/Disciplinas";
 import Turmas from "./pages/dashboard/shared/Turmas";
 import Avaliacoes from "./pages/dashboard/shared/Avaliacoes";
 import AvaliacaoDetalhes from "./pages/dashboard/shared/AvaliacaoDetalhes";
-import Relatorios from "./pages/dashboard/shared/Relatorios";
+import Relatorios from "./pages/dashboard/Relatorios";
 
 // Professor
 import CorrecaoOCR from "./pages/dashboard/professor/CorrecaoOCR";
