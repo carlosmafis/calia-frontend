@@ -31,6 +31,7 @@ export default function CorrecaoOCR() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [studentProofStatus, setStudentProofStatus] = useState<Record<string, any>>({});
+  const [editingQuestion, setEditingQuestion] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -364,19 +365,48 @@ export default function CorrecaoOCR() {
                                   {(Array.isArray(result.answers) ? result.answers : Object.values(result.answers || {})).map((answer: string, i: number) => (
                                     <Button
                                       key={i}
-                                      variant={editingAnswers[i] === answer ? "default" : "outline"}
-                                      onClick={() => {
-                                        const newAnswers = { ...editingAnswers };
-                                        newAnswers[i] = editingAnswers[i] === answer ? "" : answer;
-                                        setEditingAnswers(newAnswers);
-                                      }}
+                                      variant={editingAnswers[i] ? "default" : "outline"}
+                                      onClick={() => setEditingQuestion(i)}
                                       className="h-12 text-lg font-semibold"
                                     >
-                                      Q{i + 1}: {answer || "—"}
+                                      Q{i + 1}: {editingAnswers[i] || answer || "—"}
                                     </Button>
                                   ))}
                                 </div>
                               </div>
+
+                              {/* Dialog para editar resposta */}
+                              <Dialog open={editingQuestion !== null} onOpenChange={(open) => {
+                                if (!open) setEditingQuestion(null);
+                              }}>
+                                <DialogContent className="bg-card border-border">
+                                  <DialogHeader>
+                                    <DialogTitle>Editar Resposta - Questão {editingQuestion !== null ? editingQuestion + 1 : ""}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">
+                                      Resposta detectada: <strong>{editingQuestion !== null && (Array.isArray(result.answers) ? result.answers[editingQuestion] : Object.values(result.answers || {})[editingQuestion])}</strong>
+                                    </p>
+                                    <div className="grid grid-cols-5 gap-2">
+                                      {OPTIONS.map((option) => (
+                                        <Button
+                                          key={option}
+                                          variant={editingAnswers[editingQuestion!] === option ? "default" : "outline"}
+                                          onClick={() => {
+                                            const newAnswers = { ...editingAnswers };
+                                            newAnswers[editingQuestion!] = option;
+                                            setEditingAnswers(newAnswers);
+                                            setEditingQuestion(null);
+                                          }}
+                                          className="h-12 text-lg font-semibold"
+                                        >
+                                          {option}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
 
                               <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
                                 <p className="text-xs text-blue-900 dark:text-blue-200">
