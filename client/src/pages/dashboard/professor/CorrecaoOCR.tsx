@@ -68,9 +68,11 @@ export default function CorrecaoOCR() {
       if (Array.isArray(results)) {
         results.forEach((result: any) => {
           if (result.student_id && result.score !== null && result.score !== undefined) {
+            // Converter score de 0-100 para 0-10
+            const scoreIn10 = Math.round((result.score / 100) * 10 * 10) / 10; // Arredondar para 1 casa decimal
             status[result.student_id] = {
               status: "corrected",
-              score: Math.round(result.score),
+              score: scoreIn10,
             };
           }
         });
@@ -274,7 +276,7 @@ export default function CorrecaoOCR() {
                       {getStatusBadge(status.status)}
                       {status.status === "corrected" && (
                         <Badge className="bg-green-500/20 text-green-700 dark:text-green-400">
-                          {Math.round(status.score / 10)}/10
+                          {status.score}/10
                         </Badge>
                       )}
                       <Dialog open={uploadDialogOpen && uploadingStudent === student.id} onOpenChange={(open) => {
@@ -384,7 +386,7 @@ export default function CorrecaoOCR() {
                                   ✓ OCR Processado com Sucesso
                                 </p>
                                 <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">
-                                  Nota: {Math.round(result.score / 10)}/10
+                                  Nota: {Math.round((result.score / 100) * 10 * 10) / 10}/10
                                 </p>
                               </div>
 
