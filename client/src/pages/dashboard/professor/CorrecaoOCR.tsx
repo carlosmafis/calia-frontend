@@ -68,11 +68,9 @@ export default function CorrecaoOCR() {
       if (Array.isArray(results)) {
         results.forEach((result: any) => {
           if (result.student_id && result.score !== null && result.score !== undefined) {
-            // Converter score de 0-100 para 0-10
-            const scoreIn10 = result.score / 10; // Simples: 100 vira 10, 90 vira 9, etc
             status[result.student_id] = {
               status: "corrected",
-              score: scoreIn10,
+              score: result.score, // Score já vem como número de acertos (ex: 9)
             };
           }
         });
@@ -386,7 +384,7 @@ export default function CorrecaoOCR() {
                                   ✓ OCR Processado com Sucesso
                                 </p>
                                 <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">
-                                  Nota: {(result.score / 10).toFixed(1)}/10
+                                  Nota: {result.score}
                                 </p>
                               </div>
 
