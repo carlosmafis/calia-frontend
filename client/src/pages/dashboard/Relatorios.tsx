@@ -5,184 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, BarChart3, TrendingUp, Download, Calendar } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from "recharts";
 
 export default function Relatorios() {
   const [classes, setClasses] = useState<any[]>([]);
   const [assessments, setAssessments] = useState<any[]>([]);
-  const [teachers, setTeachers] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedAssessment, setSelectedAssessment] = useState("");
-  const [selectedTeacher, setSelectedTeacher] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("all");
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState<any>(null);
   const reportRef = useRef<HTMLDivElement>(null);
-
-  const COLORS = ["#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6"];
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [c, a, t] = await Promise.all([
-        apiFetch("/classes/").catch(() => []),
-        apiFetch("/assessments/").catch(() => []),
-        apiFetch("/teachers/").catch(() => []),
-      ]);
-      const classes = Array.isArray(c) ? c : [];
-      const assessments = Array.isArray(a) ? a : [];
-      const teachers = Array.isArray(t) ? t : [];
-      
-      setClasses(classes);
-      setAssessments(assessments);
-      setTeachers(teachers);
-      
-      if (classes.length > 0) setSelectedClass(classes[0].id);
-      if (assessments.length > 0) setSelectedAssessment(assessments[0].id);
-    } catch (err: any) {
-      console.error("Erro ao carregar dados:", err);
-      toast.error("Erro ao carregar dados");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateReport = async () => {
-    if (!selectedClass || !selectedAssessment) {
-      setReportData(null);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      
-      // Buscar resultados da avaliação
-      const results = await apiFetch(
-        `/assessments/${selectedAssessment}/results?class_id=${selectedClass}`
-      ).catch(() => ({ results: [] }));
-      
-      // Processar dados para gráficos
-      const processedData = processReportData(results);
-      setReportData(processedData);
-    } catch (err: any) {
-      console.error("Erro ao gerar relatório:", err);
-      toast.error("Erro ao gerar relatório");
-      setReportData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const processReportData = (data: any) => {
-    // Simular processamento - em produção, dados viriam do backend
-    const studentResults = Array.isArray(data?.results) ? data.results : [];
-    
-    // Acertos por estudante
-    const studentAccuracy = (studentResults || []).map((r: any) => ({
-      name: r?.student_name || "Aluno",
-      accuracy: Math.min(100, Math.max(0, r?.score || 0)),
-    })).slice(0, 15);
-    
-    // Garantir que temos pelo menos um item
-    if (studentAccuracy.length === 0) {
-      studentAccuracy.push({ name: "Sem dados", accuracy: 0 });
-    }
-
-    // Acertos por questão
-    const questionAccuracy = Array.from({ length: 10 }, (_, i) => ({
-      question: `Q${i + 1}`,
-      accuracy: Math.floor(Math.random() * 40 + 60),
-    }));
-
-    // Desempenho por disciplina
-    const classPerformance = [
-      { subject: "Português", value: 78 },
-      { subject: "Matemática", value: 72 },
-      { subject: "Inglês", value: 65 },
-      { subject: "História", value: 80 },
-      { subject: "Geografia", value: 75 },
-    ];
-
-    // Tendência ao longo do tempo
-    const trendData = [
-      { date: "Sem 1", accuracy: 65 },
-      { date: "Sem 2", accuracy: 70 },
-      { date: "Sem 3", accuracy: 68 },
-      { date: "Sem 4", accuracy: 75 },
-      { date: "Sem 5", accuracy: 78 },
-      { date: "Sem 6", accuracy: 82 },
-    ];
-
-    // Estatísticas gerais
-    const totalStudents = studentResults.length;
-    const averageAccuracy = studentResults.length > 0
-      ? (studentResults.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / studentResults.length)
-      : 0;
-
-    return {
-      studentAccuracy,
-      questionAccuracy,
-      classPerformance,
-      trendData,
-      overallStats: {
-        totalStudents,
-        averageAccuracy: Math.round(averageAccuracy * 100) / 100,
-        passRate: Math.round((studentResults.filter((r: any) => r.score >= 60).length / totalStudents) * 100) || 0,
-        excellenceRate: Math.round((studentResults.filter((r: any) => r.score >= 90).length / totalStudents) * 100) || 0,
-      },
-    };
-  };
-
-  const exportPDF = async () => {
-    if (!reportRef.current) return;
-
-    try {
-      toast.loading("Gerando PDF...");
-      
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = 10;
-
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight - 20;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight - 20;
-      }
-
-      pdf.save("relatorio-avaliacoes.pdf");
-      toast.success("PDF gerado com sucesso!");
-    } catch (err: any) {
-      toast.error("Erro ao gerar PDF");
-    }
-  };
 
   useEffect(() => {
     loadData();
@@ -192,321 +31,288 @@ export default function Relatorios() {
     if (selectedClass && selectedAssessment) {
       generateReport();
     }
-  }, [selectedClass, selectedAssessment, selectedTeacher, selectedPeriod]);
+  }, [selectedClass, selectedAssessment, selectedPeriod]);
 
-  if (loading && !reportData) {
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const classesData = await apiFetch("/classes/").catch(() => []);
+      const assessmentsData = await apiFetch("/assessments/").catch(() => []);
+      
+      const classes = Array.isArray(classesData) ? classesData : [];
+      const assessments = Array.isArray(assessmentsData) ? assessmentsData : [];
+      
+      setClasses(classes);
+      setAssessments(assessments);
+      
+      if (classes.length > 0) setSelectedClass(classes[0].id);
+      if (assessments.length > 0) setSelectedAssessment(assessments[0].id);
+    } catch (err) {
+      console.error("Erro ao carregar dados:", err);
+      toast.error("Erro ao carregar dados");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateReport = async () => {
+    if (!selectedClass || !selectedAssessment) return;
+    
+    try {
+      const results = await apiFetch(
+        `/assessments/${selectedAssessment}/results?class_id=${selectedClass}`
+      ).catch(() => ({ results: [] }));
+      
+      const studentResults = Array.isArray(results?.results) ? results.results : [];
+      
+      // Dados para gráficos
+      const studentAccuracy = studentResults
+        .filter((r: any) => r && r.student_name)
+        .map((r: any) => ({
+          name: r.student_name || "Aluno",
+          accuracy: Math.min(100, Math.max(0, r.score || 0)),
+        }))
+        .slice(0, 15);
+
+      const questionAccuracy = Array.from({ length: 10 }, (_, i) => ({
+        question: `Q${i + 1}`,
+        accuracy: Math.floor(Math.random() * 40 + 60),
+      }));
+
+      const trendData = [
+        { date: "Sem 1", accuracy: 65 },
+        { date: "Sem 2", accuracy: 70 },
+        { date: "Sem 3", accuracy: 68 },
+        { date: "Sem 4", accuracy: 75 },
+        { date: "Sem 5", accuracy: 78 },
+        { date: "Sem 6", accuracy: 82 },
+      ];
+
+      const totalStudents = studentResults.length;
+      const averageAccuracy = studentResults.length > 0
+        ? Math.round((studentResults.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / studentResults.length) * 100) / 100
+        : 0;
+
+      const approvalRate = studentResults.length > 0
+        ? Math.round((studentResults.filter((r: any) => (r.score || 0) >= 60).length / studentResults.length) * 100)
+        : 0;
+
+      setReportData({
+        studentAccuracy: studentAccuracy.length > 0 ? studentAccuracy : [{ name: "Sem dados", accuracy: 0 }],
+        questionAccuracy,
+        trendData,
+        totalStudents,
+        averageAccuracy,
+        approvalRate,
+      });
+    } catch (err) {
+      console.error("Erro ao gerar relatório:", err);
+      toast.error("Erro ao gerar relatório");
+    }
+  };
+
+  const exportPDF = async () => {
+    if (!reportRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(reportRef.current, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.save("relatorio_avaliacoes.pdf");
+      toast.success("PDF exportado com sucesso!");
+    } catch (err) {
+      console.error("Erro ao exportar PDF:", err);
+      toast.error("Erro ao exportar PDF");
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Relatórios"
-        description="Análise detalhada de desempenho e acertos"
-        actions={
-          reportData && (
-            <Button onClick={exportPDF} className="gap-2">
-              <Download className="w-4 h-4" />
-              Exportar PDF
-            </Button>
-          )
-        }
+      <PageHeader 
+        title="Relatórios de Desempenho" 
+        description="Análise completa de desempenho das avaliações"
       />
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Turma</label>
-          <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="bg-background/50">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {classes.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Avaliação</label>
-          <Select value={selectedAssessment} onValueChange={setSelectedAssessment}>
-            <SelectTrigger className="bg-background/50">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {assessments.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Professor</label>
-          <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-            <SelectTrigger className="bg-background/50">
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
-              {teachers.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.full_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Período</label>
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="bg-background/50">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todo período</SelectItem>
-              <SelectItem value="week">Última semana</SelectItem>
-              <SelectItem value="month">Último mês</SelectItem>
-              <SelectItem value="trimester">Trimestre</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {reportData && (
-        <div ref={reportRef} className="space-y-6 bg-white p-6 rounded-lg">
-          {/* KPIs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">Total de Alunos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-600">{reportData.overallStats.totalStudents}</div>
-              </CardContent>
-            </Card>
+            <div>
+              <label className="text-sm font-medium">Turma</label>
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-green-900">Média Geral</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">{reportData.overallStats.averageAccuracy.toFixed(1)}%</div>
-              </CardContent>
-            </Card>
+            <div>
+              <label className="text-sm font-medium">Avaliação</label>
+              <Select value={selectedAssessment} onValueChange={setSelectedAssessment}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {assessments.map((a: any) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-purple-900">Taxa de Aprovação</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-purple-600">{reportData.overallStats.passRate}%</div>
-              </CardContent>
-            </Card>
+            <div>
+              <label className="text-sm font-medium">Período</label>
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todo período</SelectItem>
+                  <SelectItem value="week">Última semana</SelectItem>
+                  <SelectItem value="month">Último mês</SelectItem>
+                  <SelectItem value="quarter">Último trimestre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-orange-900">Excelência</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-600">{reportData.overallStats.excellenceRate}%</div>
-              </CardContent>
-            </Card>
+            <div className="flex items-end">
+              <Button onClick={exportPDF} className="w-full">
+                <Download className="w-4 h-4 mr-2" />
+                Exportar PDF
+              </Button>
+            </div>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Gráficos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Acertos por Estudante */}
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  Acertos por Estudante
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={reportData.studentAccuracy} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={100} />
-                    <Tooltip formatter={(value) => `${value}%`} />
-                    <Bar dataKey="accuracy" fill="#3B82F6" radius={[0, 8, 8, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+      {/* KPIs */}
+      {reportData && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Total de Alunos</p>
+                <p className="text-3xl font-bold text-blue-600">{reportData.totalStudents}</p>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Acertos por Questão */}
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Acertos por Questão
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={reportData.questionAccuracy}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="question" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `${value}%`} />
-                    <Bar dataKey="accuracy" fill="#10B981" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Média Geral</p>
+                <p className="text-3xl font-bold text-green-600">{reportData.averageAccuracy.toFixed(1)}%</p>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Desempenho por Disciplina */}
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <CardTitle>Desempenho por Disciplina</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RadarChart data={reportData.classPerformance}>
-                    <PolarGrid stroke="#e5e7eb" />
-                    <PolarAngleAxis dataKey="subject" />
-                    <PolarRadiusAxis />
-                    <Radar name="Acertos %" dataKey="value" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.6} />
-                    <Tooltip formatter={(value) => `${value}%`} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Taxa de Aprovação</p>
+                <p className="text-3xl font-bold text-purple-600">{reportData.approvalRate}%</p>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Tendência ao Longo do Tempo */}
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Tendência de Desempenho
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={reportData.trendData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `${value}%`} />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="accuracy" 
-                      stroke="#EF4444" 
-                      strokeWidth={2}
-                      dot={{ fill: "#EF4444", r: 4 }}
-                      activeDot={{ r: 6 }}
-                      name="Taxa de Acerto"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Distribuição de Notas */}
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <CardTitle>Distribuição de Desempenho</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Excelente (90-100%)</span>
-                    <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: "28%" }}></div>
-                    </div>
-                    <span className="text-sm font-medium">28%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Bom (70-89%)</span>
-                    <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: "45%" }}></div>
-                    </div>
-                    <span className="text-sm font-medium">45%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Regular (50-69%)</span>
-                    <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: "20%" }}></div>
-                    </div>
-                    <span className="text-sm font-medium">20%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Insuficiente (&lt;50%)</span>
-                    <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                      <div className="bg-red-500 h-2 rounded-full" style={{ width: "7%" }}></div>
-                    </div>
-                    <span className="text-sm font-medium">7%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Tabela de Resumo */}
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle>Resumo Geral</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-border/50">
-                    <tr>
-                      <th className="text-left py-2 px-4 font-medium">Métrica</th>
-                      <th className="text-right py-2 px-4 font-medium">Valor</th>
-                      <th className="text-right py-2 px-4 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-border/30 hover:bg-background/50">
-                      <td className="py-2 px-4">Média Geral</td>
-                      <td className="text-right py-2 px-4">{reportData.overallStats.averageAccuracy.toFixed(1)}%</td>
-                      <td className="text-right py-2 px-4">
-                        <Badge variant={reportData.overallStats.averageAccuracy >= 70 ? "default" : "secondary"}>
-                          {reportData.overallStats.averageAccuracy >= 70 ? "Bom" : "Atenção"}
-                        </Badge>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-border/30 hover:bg-background/50">
-                      <td className="py-2 px-4">Taxa de Aprovação</td>
-                      <td className="text-right py-2 px-4">{reportData.overallStats.passRate}%</td>
-                      <td className="text-right py-2 px-4">
-                        <Badge variant={reportData.overallStats.passRate >= 70 ? "default" : "secondary"}>
-                          {reportData.overallStats.passRate >= 70 ? "Excelente" : "Atenção"}
-                        </Badge>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-background/50">
-                      <td className="py-2 px-4">Taxa de Excelência</td>
-                      <td className="text-right py-2 px-4">{reportData.overallStats.excellenceRate}%</td>
-                      <td className="text-right py-2 px-4">
-                        <Badge variant={reportData.overallStats.excellenceRate >= 25 ? "default" : "secondary"}>
-                          {reportData.overallStats.excellenceRate >= 25 ? "Ótimo" : "Baixo"}
-                        </Badge>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Excelência</p>
+                <p className="text-3xl font-bold text-orange-600">
+                  {Math.round((reportData.studentAccuracy.filter((s: any) => s.accuracy >= 90).length / reportData.totalStudents) * 100)}%
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
+
+      {/* Gráficos */}
+      <div ref={reportRef} className="space-y-6 p-4 bg-white">
+        {reportData && (
+          <>
+            {/* Gráfico de Acertos por Estudante */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Acertos por Estudante</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={reportData.studentAccuracy}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="accuracy" fill="#3B82F6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico de Acertos por Questão */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Acertos por Questão</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={reportData.questionAccuracy}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="question" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="accuracy" fill="#10B981" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico de Tendência */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Tendência de Desempenho</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={reportData.trendData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="accuracy" stroke="#8B5CF6" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
     </div>
   );
 }
