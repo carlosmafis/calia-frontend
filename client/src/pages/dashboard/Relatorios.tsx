@@ -30,17 +30,24 @@ export default function Relatorios() {
 
   const loadData = async () => {
     try {
+      setLoading(true);
       const [c, a, t] = await Promise.all([
-        apiFetch("/classes"),
-        apiFetch("/assessments"),
-        apiFetch("/teachers"),
+        apiFetch("/classes/").catch(() => []),
+        apiFetch("/assessments/").catch(() => []),
+        apiFetch("/teachers/").catch(() => []),
       ]);
-      setClasses(c || []);
-      setAssessments(a || []);
-      setTeachers(t || []);
-      if (c?.length > 0) setSelectedClass(c[0].id);
-      if (a?.length > 0) setSelectedAssessment(a[0].id);
+      const classes = Array.isArray(c) ? c : [];
+      const assessments = Array.isArray(a) ? a : [];
+      const teachers = Array.isArray(t) ? t : [];
+      
+      setClasses(classes);
+      setAssessments(assessments);
+      setTeachers(teachers);
+      
+      if (classes.length > 0) setSelectedClass(classes[0].id);
+      if (assessments.length > 0) setSelectedAssessment(assessments[0].id);
     } catch (err: any) {
+      console.error("Erro ao carregar dados:", err);
       toast.error("Erro ao carregar dados");
     } finally {
       setLoading(false);
@@ -48,7 +55,10 @@ export default function Relatorios() {
   };
 
   const generateReport = async () => {
-    if (!selectedClass || !selectedAssessment) return;
+    if (!selectedClass || !selectedAssessment) {
+      setReportData(null);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -56,13 +66,15 @@ export default function Relatorios() {
       // Buscar resultados da avaliação
       const results = await apiFetch(
         `/assessments/${selectedAssessment}/results?class_id=${selectedClass}`
-      );
+      ).catch(() => ({ results: [] }));
       
       // Processar dados para gráficos
       const processedData = processReportData(results);
       setReportData(processedData);
     } catch (err: any) {
+      console.error("Erro ao gerar relatório:", err);
       toast.error("Erro ao gerar relatório");
+      setReportData(null);
     } finally {
       setLoading(false);
     }
@@ -70,13 +82,18 @@ export default function Relatorios() {
 
   const processReportData = (data: any) => {
     // Simular processamento - em produção, dados viriam do backend
-    const studentResults = data?.results || [];
+    const studentResults = Array.isArray(data?.results) ? data.results : [];
     
     // Acertos por estudante
-    const studentAccuracy = studentResults.map((r: any) => ({
-      name: r.student_name || "Aluno",
-      accuracy: r.score || 0,
+    const studentAccuracy = (studentResults || []).map((r: any) => ({
+      name: r?.student_name || "Aluno",
+      accuracy: Math.min(100, Math.max(0, r?.score || 0)),
     })).slice(0, 15);
+    
+    // Garantir que temos pelo menos um item
+    if (studentAccuracy.length === 0) {
+      studentAccuracy.push({ name: "Sem dados", accuracy: 0 });
+    }
 
     // Acertos por questão
     const questionAccuracy = Array.from({ length: 10 }, (_, i) => ({
