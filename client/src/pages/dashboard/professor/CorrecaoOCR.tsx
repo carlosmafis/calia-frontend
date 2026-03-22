@@ -37,18 +37,49 @@ export default function CorrecaoOCR() {
     const load = async () => {
       try {
         const [c, a, s] = await Promise.all([
-          apiFetch("/classes"),
-          apiFetch("/assessments"),
-          apiFetch("/students"),
+          apiFetch("/classes").catch(() => []),
+          apiFetch("/assessments").catch(() => []),
+          apiFetch("/students").catch(() => []),
         ]);
         setClasses(c || []);
         setAssessments(a || []);
         setStudents(s || []);
       } catch {}
       setLoading(false);
-    };
+    }
     load();
   }, []);
+
+  // Carregar status das provas quando turma/avaliação mudam
+  useEffect(() => {
+    if (selectedClass && selectedAssessment) {
+      loadProofStatus();
+    }
+  }, [selectedClass, selectedAssessment]);
+
+  const loadProofStatus = async () => {
+    try {
+      // Buscar resultados da avaliação para verificar quais alunos já foram corrigidos
+      const results = await apiFetch(
+        `/assessments/${selectedAssessment}/results?class_id=${selectedClass}`
+      ).catch(() => ({ results: [] }));
+
+      const status: Record<string, any> = {};
+      if (results?.results && Array.isArray(results.results)) {
+        results.results.forEach((result: any) => {
+          if (result.student_id && result.score !== null && result.score !== undefined) {
+            status[result.student_id] = {
+              status: "corrected",
+              score: Math.round(result.score),
+            };
+          }
+        });
+      }
+      setStudentProofStatus(status);
+    } catch (err) {
+      console.error("Erro ao carregar status das provas:", err);
+    }
+  };
 
   // Filtrar avaliações pela turma selecionada
   const filteredAssessments = selectedClass
@@ -127,10 +158,14 @@ export default function CorrecaoOCR() {
       });
 
       toast.success("Prova corrigida e salva!");
+      // Atualizar status da prova
       setStudentProofStatus((prev) => ({
         ...prev,
-        [uploadingStudent]: { status: "corrected", score: result.score },
+        [uploadingStudent]: { status: "corrected", score: Math.round(result.score) },
       }));
+      
+      // Recarregar status de todas as provas para sincronizar
+      await loadProofStatus();
 
       // Limpar formulário
       setFile(null);
@@ -139,6 +174,9 @@ export default function CorrecaoOCR() {
       setEditingAnswers({});
       setUploadingStudent(null);
       setUploadDialogOpen(false);
+      
+      // Recarregar a lista de status das provas
+      setTimeout(() => loadProofStatus(), 500);
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar correção");
     } finally {
@@ -147,7 +185,12 @@ export default function CorrecaoOCR() {
   };
 
   const getStudentStatus = (studentId: string) => {
-    return studentProofStatus[studentId] || { status: "pending" };
+    // Verificar se já tem status no estado
+    if (studentProofStatus[studentId]) {
+      return studentProofStatus[studentId];
+    }
+    // Se não tem, retornar pendente
+    return { status: "pending" };
   };
 
   const getStatusBadge = (status: string) => {
