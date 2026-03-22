@@ -1,34 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, BarChart3, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, BarChart3, TrendingUp, Download, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  Cell, PieChart, Pie, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
+  Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from "recharts";
 
 export default function Relatorios() {
   const [classes, setClasses] = useState<any[]>([]);
   const [assessments, setAssessments] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedAssessment, setSelectedAssessment] = useState("");
+  const [selectedTeacher, setSelectedTeacher] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState("all");
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState<any>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
 
-  const COLORS = ["#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#14B8A6"];
+  const COLORS = ["#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6"];
 
   const loadData = async () => {
     try {
-      const [c, a] = await Promise.all([
+      const [c, a, t] = await Promise.all([
         apiFetch("/classes"),
         apiFetch("/assessments"),
+        apiFetch("/teachers"),
       ]);
       setClasses(c || []);
       setAssessments(a || []);
+      setTeachers(t || []);
       if (c?.length > 0) setSelectedClass(c[0].id);
       if (a?.length > 0) setSelectedAssessment(a[0].id);
     } catch (err: any) {
@@ -43,12 +52,14 @@ export default function Relatorios() {
     
     try {
       setLoading(true);
-      const data = await apiFetch(
+      
+      // Buscar resultados da avaliação
+      const results = await apiFetch(
         `/assessments/${selectedAssessment}/results?class_id=${selectedClass}`
       );
       
       // Processar dados para gráficos
-      const processedData = processReportData(data);
+      const processedData = processReportData(results);
       setReportData(processedData);
     } catch (err: any) {
       toast.error("Erro ao gerar relatório");
@@ -58,42 +69,102 @@ export default function Relatorios() {
   };
 
   const processReportData = (data: any) => {
-    // Simular processamento de dados
-    // Em produção, isso viria do backend
+    // Simular processamento - em produção, dados viriam do backend
+    const studentResults = data?.results || [];
+    
+    // Acertos por estudante
+    const studentAccuracy = studentResults.map((r: any) => ({
+      name: r.student_name || "Aluno",
+      accuracy: r.score || 0,
+    })).slice(0, 15);
+
+    // Acertos por questão
+    const questionAccuracy = Array.from({ length: 10 }, (_, i) => ({
+      question: `Q${i + 1}`,
+      accuracy: Math.floor(Math.random() * 40 + 60),
+    }));
+
+    // Desempenho por disciplina
+    const classPerformance = [
+      { subject: "Português", value: 78 },
+      { subject: "Matemática", value: 72 },
+      { subject: "Inglês", value: 65 },
+      { subject: "História", value: 80 },
+      { subject: "Geografia", value: 75 },
+    ];
+
+    // Tendência ao longo do tempo
+    const trendData = [
+      { date: "Sem 1", accuracy: 65 },
+      { date: "Sem 2", accuracy: 70 },
+      { date: "Sem 3", accuracy: 68 },
+      { date: "Sem 4", accuracy: 75 },
+      { date: "Sem 5", accuracy: 78 },
+      { date: "Sem 6", accuracy: 82 },
+    ];
+
+    // Estatísticas gerais
+    const totalStudents = studentResults.length;
+    const averageAccuracy = studentResults.length > 0
+      ? (studentResults.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / studentResults.length)
+      : 0;
+
     return {
-      studentAccuracy: [
-        { name: "Ana Silva", accuracy: 80 },
-        { name: "Bruno Costa", accuracy: 70 },
-        { name: "Carlos Santos", accuracy: 90 },
-        { name: "Diana Lima", accuracy: 65 },
-        { name: "Eduardo Oliveira", accuracy: 85 },
-      ],
-      questionAccuracy: [
-        { question: "Q1", accuracy: 85 },
-        { question: "Q2", accuracy: 72 },
-        { question: "Q3", accuracy: 90 },
-        { question: "Q4", accuracy: 68 },
-        { question: "Q5", accuracy: 78 },
-        { question: "Q6", accuracy: 82 },
-        { question: "Q7", accuracy: 75 },
-        { question: "Q8", accuracy: 88 },
-        { question: "Q9", accuracy: 70 },
-        { question: "Q10", accuracy: 80 },
-      ],
-      classPerformance: [
-        { subject: "Português", value: 78 },
-        { subject: "Matemática", value: 72 },
-        { subject: "Inglês", value: 65 },
-        { subject: "História", value: 80 },
-        { subject: "Geografia", value: 75 },
-      ],
+      studentAccuracy,
+      questionAccuracy,
+      classPerformance,
+      trendData,
       overallStats: {
-        totalStudents: 45,
-        averageAccuracy: 76.5,
-        passRate: 82,
-        excellenceRate: 28,
+        totalStudents,
+        averageAccuracy: Math.round(averageAccuracy * 100) / 100,
+        passRate: Math.round((studentResults.filter((r: any) => r.score >= 60).length / totalStudents) * 100) || 0,
+        excellenceRate: Math.round((studentResults.filter((r: any) => r.score >= 90).length / totalStudents) * 100) || 0,
       },
     };
+  };
+
+  const exportPDF = async () => {
+    if (!reportRef.current) return;
+
+    try {
+      toast.loading("Gerando PDF...");
+      
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 10;
+
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - 20;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - 20;
+      }
+
+      pdf.save("relatorio-avaliacoes.pdf");
+      toast.success("PDF gerado com sucesso!");
+    } catch (err: any) {
+      toast.error("Erro ao gerar PDF");
+    }
   };
 
   useEffect(() => {
@@ -104,7 +175,7 @@ export default function Relatorios() {
     if (selectedClass && selectedAssessment) {
       generateReport();
     }
-  }, [selectedClass, selectedAssessment]);
+  }, [selectedClass, selectedAssessment, selectedTeacher, selectedPeriod]);
 
   if (loading && !reportData) {
     return (
@@ -119,10 +190,18 @@ export default function Relatorios() {
       <PageHeader
         title="Relatórios"
         description="Análise detalhada de desempenho e acertos"
+        actions={
+          reportData && (
+            <Button onClick={exportPDF} className="gap-2">
+              <Download className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+          )
+        }
       />
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Turma</label>
           <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -154,10 +233,42 @@ export default function Relatorios() {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Professor</label>
+          <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+            <SelectTrigger className="bg-background/50">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos</SelectItem>
+              {teachers.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.full_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Período</label>
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="bg-background/50">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todo período</SelectItem>
+              <SelectItem value="week">Última semana</SelectItem>
+              <SelectItem value="month">Último mês</SelectItem>
+              <SelectItem value="trimester">Trimestre</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {reportData && (
-        <>
+        <div ref={reportRef} className="space-y-6 bg-white p-6 rounded-lg">
           {/* KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
@@ -259,6 +370,36 @@ export default function Relatorios() {
               </CardContent>
             </Card>
 
+            {/* Tendência ao Longo do Tempo */}
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Tendência de Desempenho
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={reportData.trendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => `${value}%`} />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="accuracy" 
+                      stroke="#EF4444" 
+                      strokeWidth={2}
+                      dot={{ fill: "#EF4444", r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Taxa de Acerto"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
             {/* Distribuição de Notas */}
             <Card className="bg-card/50 border-border/50">
               <CardHeader>
@@ -347,7 +488,7 @@ export default function Relatorios() {
               </div>
             </CardContent>
           </Card>
-        </>
+        </div>
       )}
     </div>
   );
