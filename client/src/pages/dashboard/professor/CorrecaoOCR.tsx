@@ -29,6 +29,8 @@ export default function CorrecaoOCR() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,6 +46,30 @@ export default function CorrecaoOCR() {
     };
     load();
   }, []);
+
+  // Carregar submissões quando mudar avaliação
+  useEffect(() => {
+    if (!selectedAssessment) {
+      setSubmissions([]);
+      return;
+    }
+
+    const loadSubmissions = async () => {
+      setLoadingSubmissions(true);
+      try {
+        const subs = await apiFetch(`/assessments/${selectedAssessment}/submissions`);
+        console.log("Submissões carregadas:", subs);
+        setSubmissions(subs || []);
+      } catch (err) {
+        console.error("Erro ao carregar submissões:", err);
+        setSubmissions([]);
+      } finally {
+        setLoadingSubmissions(false);
+      }
+    };
+
+    loadSubmissions();
+  }, [selectedAssessment]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -129,6 +155,17 @@ export default function CorrecaoOCR() {
         }),
       });
       toast.success("Correção confirmada e salva!");
+      
+      // Recarregar submissões após confirmar
+      if (selectedAssessment) {
+        try {
+          const subs = await apiFetch(`/assessments/${selectedAssessment}/submissions`);
+          setSubmissions(subs || []);
+        } catch (err) {
+          console.error("Erro ao recarregar submissões:", err);
+        }
+      }
+      
       resetForm();
     } catch (err: any) {
       toast.error(err.message || "Erro ao confirmar correção");
@@ -142,6 +179,13 @@ export default function CorrecaoOCR() {
     ? students.filter((s) => s.class_id === selectedAssessmentObj.class_id)
     : students;
 
+  // Mapa de submissões por student_id para fácil lookup
+  const submissionMap = new Map(submissions.map((s) => [s.student_id, s]));
+
+  // Contar quantos alunos têm submissão
+  const correctedCount = submissions.length;
+  const totalStudents = filteredStudents.length;
+
   // Count correct/wrong from result
   const correctCount = result?.details ? result.details.filter((d: any) => d.correct).length : null;
   const totalQuestions = result?.details?.length || (result?.answers ? Object.keys(result.answers).length : null);
@@ -152,6 +196,27 @@ export default function CorrecaoOCR() {
         title="Correção por OCR"
         description="Digitalize folhas de respostas para correção automática com inteligência artificial"
       />
+
+      {/* Resumo de Correções */}
+      {selectedAssessment && (
+        <Card className="bg-card/50 border-border/50 mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Progresso da Correção</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-primary">{correctedCount}</p>
+                <p className="text-xs text-muted-foreground">de {totalStudents} aluno(s) corrigido(s)</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium">{totalStudents > 0 ? Math.round((correctedCount / totalStudents) * 100) : 0}%</p>
+                <p className="text-xs text-muted-foreground">Completo</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Upload Area */}
@@ -264,194 +329,206 @@ export default function CorrecaoOCR() {
           )}
         </div>
 
-        {/* Result Area */}
-        <Card className="bg-card/50 border-border/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Resultado da Correção</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {result ? (
-              <div className="space-y-4">
-                {/* Score */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-4 rounded-lg bg-background/50 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Nota</p>
-                    <p className="text-3xl font-bold font-mono text-primary">
-                      {result.score != null ? Number(result.score).toFixed(1) : "—"}
-                    </p>
-                  </div>
-                  {correctCount != null && (
-                    <>
-                      <div className="p-4 rounded-lg bg-green-500/10 text-center">
-                        <p className="text-xs text-muted-foreground mb-1">Acertos</p>
-                        <p className="text-3xl font-bold font-mono text-green-400">{correctCount}</p>
-                      </div>
-                      <div className="p-4 rounded-lg bg-red-500/10 text-center">
-                        <p className="text-xs text-muted-foreground mb-1">Erros</p>
-                        <p className="text-3xl font-bold font-mono text-red-400">{(totalQuestions || 0) - correctCount}</p>
-                      </div>
-                    </>
-                  )}
+        {/* Students Status + Result Area */}
+        <div className="space-y-4">
+          {/* Students Status */}
+          <Card className="bg-card/50 border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Status dos Alunos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingSubmissions ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
                 </div>
+              ) : filteredStudents.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Selecione uma avaliação para ver os alunos</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {filteredStudents.map((student) => {
+                    const submission = submissionMap.get(student.id);
+                    const isCorreected = !!submission;
+                    return (
+                      <div key={student.id} className="flex items-center justify-between p-3 rounded-lg bg-background/30 border border-border/50">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{student.name}</p>
+                          <p className="text-xs text-muted-foreground">Matrícula: {student.registration_number}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isCorreected && (
+                            <Badge variant="default" className="text-xs gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> {Number(submission.score).toFixed(1)}
+                            </Badge>
+                          )}
+                          <Badge variant={isCorreected ? "secondary" : "outline"} className="text-xs">
+                            {isCorreected ? "Corrigido" : "Pendente"}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-                {/* Debug image from OCR */}
-                {result.debug_image && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Imagem de Verificação</p>
-                    <img
-                      src={`data:image/jpeg;base64,${result.debug_image}`}
-                      alt="Debug OCR"
-                      className="w-full rounded-lg border border-border/50"
-                    />
-                  </div>
-                )}
-
-                {/* Answers detail with comparison and edit */}
-                {result.details ? (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium">Detalhes por Questão</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditDialogOpen(true)}
-                        className="gap-1 text-xs"
-                      >
-                        <Edit2 className="w-3 h-3" /> Editar Respostas
-                      </Button>
+          {/* Result Area */}
+          <Card className="bg-card/50 border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Resultado da Correção</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {result ? (
+                <div className="space-y-4">
+                  {/* Score */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-4 rounded-lg bg-background/50 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Nota</p>
+                      <p className="text-3xl font-bold font-mono text-primary">
+                        {result.score != null ? Number(result.score).toFixed(1) : "—"}
+                      </p>
                     </div>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-border/50 hover:bg-transparent">
-                          <TableHead className="w-16">Q.</TableHead>
-                          <TableHead>Resposta</TableHead>
-                          <TableHead>Gabarito</TableHead>
-                          <TableHead className="w-16 text-center">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {result.details.map((d: any, i: number) => (
-                          <TableRow key={i} className="border-border/30">
-                            <TableCell className="font-mono text-muted-foreground">{d.question || i + 1}</TableCell>
-                            <TableCell className="font-mono font-medium">
-                              {editingAnswers[d.question || (i + 1)] === "BRANCO" ? <span className="text-yellow-400">BRANCO</span>
-                                : editingAnswers[d.question || (i + 1)] === "ANULADA" ? <span className="text-red-400">ANULADA</span>
-                                : <span>{editingAnswers[d.question || (i + 1)]}</span>}
-                            </TableCell>
-                            <TableCell className="font-mono text-muted-foreground">{d.correct_answer}</TableCell>
-                            <TableCell className="text-center">
-                              {editingAnswers[d.question || (i + 1)] === d.correct_answer ? <CheckCircle2 className="w-4 h-4 text-green-400 mx-auto" /> : <XCircle className="w-4 h-4 text-red-400 mx-auto" />}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    {correctCount != null && (
+                      <>
+                        <div className="p-4 rounded-lg bg-green-500/10 text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Acertos</p>
+                          <p className="text-3xl font-bold font-mono text-green-400">{correctCount}</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-red-500/10 text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Erros</p>
+                          <p className="text-3xl font-bold font-mono text-red-400">{(totalQuestions || 0) - correctCount}</p>
+                        </div>
+                      </>
+                    )}
                   </div>
-                ) : result.answers ? (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium">Respostas Detectadas</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditDialogOpen(true)}
-                        className="gap-1 text-xs"
-                      >
-                        <Edit2 className="w-3 h-3" /> Editar Respostas
-                      </Button>
-                    </div>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-border/50 hover:bg-transparent">
-                          <TableHead className="w-16">Questão</TableHead>
-                          <TableHead>Resposta</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {Object.entries(editingAnswers).map(([num, ans]) => (
-                          <TableRow key={num} className="border-border/30">
-                            <TableCell className="font-mono text-muted-foreground">{num}</TableCell>
-                            <TableCell className="font-mono font-medium">
-                              {ans === "BRANCO" ? <span className="text-yellow-400">BRANCO</span>
-                                : ans === "ANULADA" ? <span className="text-red-400">ANULADA</span>
-                                : <span>{ans}</span>}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : null}
 
-                {/* Confirm Button */}
-                <Button
-                  onClick={confirmCorrection}
-                  disabled={confirming}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
-                >
-                  {confirming ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
-                  ) : (
-                    <><Save className="w-4 h-4" /> Confirmar e Salvar Correção</>
+                  {/* Debug image from OCR */}
+                  {result.debug_image && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Imagem de Verificação</p>
+                      <img
+                        src={`data:image/jpeg;base64,${result.debug_image}`}
+                        alt="Debug OCR"
+                        className="w-full rounded-lg border border-border/50"
+                      />
+                    </div>
                   )}
-                </Button>
-              </div>
-            ) : (
-              <div className="py-16 text-center">
-                <ScanLine className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <p className="text-muted-foreground text-sm">
-                  Selecione uma avaliação, um aluno e envie a imagem da folha de respostas para ver o resultado.
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Use o gabarito padrão com marcadores nos 4 cantos para melhor precisão.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                  {/* Answers detail with comparison and edit */}
+                  {result.details ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium">Detalhes por Questão</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditDialogOpen(true)}
+                          className="gap-1 text-xs"
+                        >
+                          <Edit2 className="w-3 h-3" /> Editar Respostas
+                        </Button>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border/50 hover:bg-transparent">
+                            <TableHead className="w-16">Q.</TableHead>
+                            <TableHead>Resposta</TableHead>
+                            <TableHead>Gabarito</TableHead>
+                            <TableHead className="w-16 text-center">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {result.details.map((d: any, i: number) => (
+                            <TableRow key={i} className="border-border/30">
+                              <TableCell className="font-mono text-muted-foreground">{d.question || i + 1}</TableCell>
+                              <TableCell className="font-mono font-medium">
+                                {editingAnswers[d.question || (i + 1)] === "BRANCO" ? <span className="text-yellow-400">BRANCO</span>
+                                  : editingAnswers[d.question || (i + 1)] === "ANULADA" ? <span className="text-red-400">ANULADA</span>
+                                  : <span>{editingAnswers[d.question || (i + 1)]}</span>}
+                              </TableCell>
+                              <TableCell className="font-mono text-muted-foreground">{d.correct_answer}</TableCell>
+                              <TableCell className="text-center">
+                                {editingAnswers[d.question || (i + 1)] === d.correct_answer ? <CheckCircle2 className="w-4 h-4 text-green-400 mx-auto" /> : <XCircle className="w-4 h-4 text-red-400 mx-auto" />}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : result.answers ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Respostas Extraídas</p>
+                      <div className="grid grid-cols-5 gap-2">
+                        {Object.entries(result.answers).map(([q, a]) => (
+                          <div key={q} className="p-2 rounded-lg bg-background/50 text-center">
+                            <p className="text-xs text-muted-foreground">Q{q}</p>
+                            <p className="text-sm font-mono font-bold text-primary">{a as string}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Confirm button */}
+                  <Button
+                    onClick={confirmCorrection}
+                    disabled={confirming}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
+                  >
+                    {confirming ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+                    ) : (
+                      <><Save className="w-4 h-4" /> Confirmar e Salvar</>
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhuma correção em andamento</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar Respostas do OCR</DialogTitle>
+            <DialogTitle>Editar Respostas</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              {Object.entries(editingAnswers).map(([num, ans]) => (
-                <div key={num} className="space-y-2">
-                  <Label>Questão {num}</Label>
-                  <div className="flex gap-1 flex-wrap">
-                    {["BRANCO", "ANULADA", ...OPTIONS].map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => setEditingAnswers((prev) => ({ ...prev, [num]: opt }))}
-                        className={`flex-1 min-w-12 h-10 rounded text-sm font-mono font-medium transition-all ${
-                          editingAnswers[num] === opt
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-background/50 text-muted-foreground hover:bg-accent border border-border/50"
-                        }`}
-                      >
-                        {opt}
-                      </button>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {result?.details?.map((d: any, i: number) => (
+              <div key={i} className="space-y-2">
+                <Label className="text-sm">
+                  Questão {d.question || i + 1} (Gabarito: {d.correct_answer})
+                </Label>
+                <Select
+                  value={editingAnswers[d.question || (i + 1)] || ""}
+                  onValueChange={(v) => {
+                    setEditingAnswers(prev => ({
+                      ...prev,
+                      [d.question || (i + 1)]: v
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a resposta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                     ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                    <SelectItem value="BRANCO">BRANCO</SelectItem>
+                    <SelectItem value="ANULADA">ANULADA</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
+              <Button variant="outline">Fechar</Button>
             </DialogClose>
-            <Button
-              onClick={() => setEditDialogOpen(false)}
-              className="bg-primary text-primary-foreground"
-            >
-              Pronto
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
