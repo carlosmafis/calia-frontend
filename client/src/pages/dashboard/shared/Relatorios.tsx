@@ -38,14 +38,27 @@ export default function Relatorios() {
         setStudents(stu || []);
 
         const allSubs: any[] = [];
-        for (const a of (as_ || []).slice(0, 20)) {
+        for (const a of (as_ || [])) {
           try {
             const subs = await apiFetch(`/assessments/${a.id}/submissions`);
-            if (subs) allSubs.push(...subs.map((s: any) => ({ ...s, assessment_id: a.id, assessment_title: a.title, class_id: a.class_id })));
-          } catch {}
+            if (Array.isArray(subs) && subs.length > 0) {
+              console.log(`Carregadas ${subs.length} submissões para avaliação ${a.id}`);
+              allSubs.push(...subs.map((s: any) => ({
+                ...s,
+                assessment_id: a.id,
+                assessment_title: a.title,
+                class_id: a.class_id
+              })));
+            }
+          } catch (err) {
+            console.error(`Erro ao carregar submissões da avaliação ${a.id}:`, err);
+          }
         }
+        console.log(`Total de submissões carregadas: ${allSubs.length}`);
         setSubmissions(allSubs);
-      } catch {}
+      } catch (err) {
+        console.error("Erro ao carregar dados dos relatórios:", err);
+      }
       setLoading(false);
     };
     load();
