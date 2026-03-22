@@ -61,12 +61,12 @@ export default function CorrecaoOCR() {
     try {
       // Buscar resultados da avaliação para verificar quais alunos já foram corrigidos
       const results = await apiFetch(
-        `/assessments/${selectedAssessment}/results?class_id=${selectedClass}`
-      ).catch(() => ({ results: [] }));
+        `/assessments/${selectedAssessment}/submissions`
+      ).catch(() => []);
 
       const status: Record<string, any> = {};
-      if (results?.results && Array.isArray(results.results)) {
-        results.results.forEach((result: any) => {
+      if (Array.isArray(results)) {
+        results.forEach((result: any) => {
           if (result.student_id && result.score !== null && result.score !== undefined) {
             status[result.student_id] = {
               status: "corrected",
@@ -142,29 +142,17 @@ export default function CorrecaoOCR() {
     if (!result || !uploadingStudent) return;
     setConfirming(true);
     try {
-      // Converter editingAnswers (objeto com índices) para dict com chaves numéricas
-      const answersDict: Record<string, string> = {};
-      Object.entries(editingAnswers).forEach(([key, value]) => {
-        answersDict[String(parseInt(key) + 1)] = value;
-      });
-      
       await apiFetch("/ocr/confirm", {
         method: "POST",
         body: JSON.stringify({
           assessment_id: selectedAssessment,
           student_id: uploadingStudent,
-          answers: answersDict,
+          answers: editingAnswers,
         }),
       });
-
-      toast.success("Prova corrigida e salva!");
-      // Atualizar status da prova
-      setStudentProofStatus((prev) => ({
-        ...prev,
-        [uploadingStudent]: { status: "corrected", score: Math.round(result.score) },
-      }));
+      toast.success("Correção confirmada e salva!");
       
-      // Recarregar status de todas as provas para sincronizar
+      // Recarregar status das provas após confirmar
       await loadProofStatus();
 
       // Limpar formulário
@@ -174,15 +162,13 @@ export default function CorrecaoOCR() {
       setEditingAnswers({});
       setUploadingStudent(null);
       setUploadDialogOpen(false);
-      
-      // Recarregar a lista de status das provas
-      setTimeout(() => loadProofStatus(), 500);
     } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar correção");
+      toast.error(err.message || "Erro ao confirmar correção");
     } finally {
       setConfirming(false);
     }
   };
+
 
   const getStudentStatus = (studentId: string) => {
     // Verificar se já tem status no estado
