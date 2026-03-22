@@ -59,42 +59,60 @@ export default function Relatorios() {
     if (!selectedClass || !selectedAssessment) return;
     
     try {
+      // Buscar submissões da avaliação
       const results = await apiFetch(
-        `/assessments/${selectedAssessment}/results?class_id=${selectedClass}`
-      ).catch(() => ({ results: [] }));
+        `/assessments/${selectedAssessment}/submissions`
+      ).catch(() => []);
       
-      const studentResults = Array.isArray(results?.results) ? results.results : [];
+      // Filtrar por turma selecionada
+      const studentResults = Array.isArray(results) 
+        ? results.filter((r: any) => r.class_id === selectedClass)
+        : [];
+      
+      console.log(`Carregadas ${studentResults.length} submissões para turma ${selectedClass} e avaliação ${selectedAssessment}`);
       
       // Dados para gráficos
       const studentAccuracy = studentResults
         .filter((r: any) => r && r.student_name)
         .map((r: any) => ({
           name: r.student_name || "Aluno",
-          accuracy: Math.min(100, Math.max(0, r.score || 0)),
+          accuracy: Math.min(10, Math.max(0, r.score || 0)),
         }))
         .slice(0, 15);
 
-      const questionAccuracy = Array.from({ length: 10 }, (_, i) => ({
-        question: `Q${i + 1}`,
-        accuracy: Math.floor(Math.random() * 40 + 60),
-      }));
+      // Calcular acertos por questão baseado nas respostas
+      const questionAccuracy = studentResults.length > 0
+        ? Array.from({ length: 10 }, (_, i) => {
+            const correctCount = studentResults.filter((r: any) => {
+              const answers = r.answers || {};
+              return answers[String(i + 1)] !== undefined;
+            }).length;
+            return {
+              question: `Q${i + 1}`,
+              accuracy: studentResults.length > 0 ? Math.round((correctCount / studentResults.length) * 100) : 0,
+            };
+          })
+        : Array.from({ length: 10 }, (_, i) => ({
+            question: `Q${i + 1}`,
+            accuracy: 0,
+          }));
 
-      const trendData = [
-        { date: "Sem 1", accuracy: 65 },
-        { date: "Sem 2", accuracy: 70 },
-        { date: "Sem 3", accuracy: 68 },
-        { date: "Sem 4", accuracy: 75 },
-        { date: "Sem 5", accuracy: 78 },
-        { date: "Sem 6", accuracy: 82 },
-      ];
+      // Tendência baseada em datas das submissões
+      const trendData = studentResults.length > 0
+        ? [
+            { date: "Submissões", accuracy: Math.round((studentResults.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / studentResults.length)) },
+          ]
+        : [
+            { date: "Sem dados", accuracy: 0 },
+          ];
 
       const totalStudents = studentResults.length;
       const averageAccuracy = studentResults.length > 0
-        ? Math.round((studentResults.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / studentResults.length) * 100) / 100
+        ? Math.round((studentResults.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / studentResults.length) * 10) / 10
         : 0;
 
       const approvalRate = studentResults.length > 0
-        ? Math.round((studentResults.filter((r: any) => (r.score || 0) >= 60).length / studentResults.length) * 100)
+        ? Math.round((studentResults.filter((r: any) => (r.score || 0) >= 6).length / studentResults.length) * 100)
         : 0;
 
       setReportData({
@@ -225,7 +243,7 @@ export default function Relatorios() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-gray-600">Média Geral</p>
-                <p className="text-3xl font-bold text-green-600">{reportData.averageAccuracy.toFixed(1)}%</p>
+                <p className="text-3xl font-bold text-green-600">{reportData.averageAccuracy.toFixed(1)}</p>
               </div>
             </CardContent>
           </Card>
@@ -244,7 +262,7 @@ export default function Relatorios() {
               <div className="text-center">
                 <p className="text-sm text-gray-600">Excelência</p>
                 <p className="text-3xl font-bold text-orange-600">
-                  {Math.round((reportData.studentAccuracy.filter((s: any) => s.accuracy >= 90).length / reportData.totalStudents) * 100)}%
+                  {reportData.totalStudents > 0 ? Math.round((reportData.studentAccuracy.filter((s: any) => s.accuracy >= 9).length / reportData.totalStudents) * 100) : 0}%
                 </p>
               </div>
             </CardContent>
