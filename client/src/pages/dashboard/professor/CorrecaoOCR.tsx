@@ -274,7 +274,7 @@ export default function CorrecaoOCR() {
                       {getStatusBadge(status.status)}
                       {status.status === "corrected" && (
                         <Badge className="bg-green-500/20 text-green-700 dark:text-green-400">
-                          {status.score}%
+                          {Math.round(status.score / 10)}/10
                         </Badge>
                       )}
                       <Dialog open={uploadDialogOpen && uploadingStudent === student.id} onOpenChange={(open) => {
@@ -384,7 +384,7 @@ export default function CorrecaoOCR() {
                                   ✓ OCR Processado com Sucesso
                                 </p>
                                 <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">
-                                  Nota: {result.score}%
+                                  Nota: {Math.round(result.score / 10)}/10
                                 </p>
                               </div>
 
