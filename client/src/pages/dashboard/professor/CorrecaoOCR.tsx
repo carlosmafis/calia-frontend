@@ -77,7 +77,7 @@ export default function CorrecaoOCR() {
       }
       setStudentProofStatus(status);
     } catch (err) {
-      console.error("Erro ao carregar status das provas:", err);
+      // Erro ao carregar status das provas
     }
   };
 

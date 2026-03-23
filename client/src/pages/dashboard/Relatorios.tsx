@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from "recharts";
@@ -18,7 +17,7 @@ export default function Relatorios() {
   const [assessments, setAssessments] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedAssessment, setSelectedAssessment] = useState("");
-  const [selectedPeriod, setSelectedPeriod] = useState("all");
+  const [selectedBimestre, setSelectedBimestre] = useState("all");
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState<any>(null);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -31,7 +30,7 @@ export default function Relatorios() {
     if (selectedClass && selectedAssessment) {
       generateReport();
     }
-  }, [selectedClass, selectedAssessment, selectedPeriod]);
+  }, [selectedClass, selectedAssessment, selectedBimestre]);
 
   const loadData = async () => {
     try {
@@ -48,7 +47,7 @@ export default function Relatorios() {
       if (classes.length > 0) setSelectedClass(classes[0].id);
       if (assessments.length > 0) setSelectedAssessment(assessments[0].id);
     } catch (err) {
-      console.error("Erro ao carregar dados:", err);
+      // Erro ao carregar dados
       toast.error("Erro ao carregar dados");
     } finally {
       setLoading(false);
@@ -64,12 +63,23 @@ export default function Relatorios() {
         `/assessments/${selectedAssessment}/submissions`
       ).catch(() => []);
       
-      // Filtrar por turma selecionada
-      const studentResults = Array.isArray(results) 
+      // Filtrar por turma selecionada e bimestre
+      let studentResults = Array.isArray(results) 
         ? results.filter((r: any) => r.class_id === selectedClass)
         : [];
       
-      console.log(`Carregadas ${studentResults.length} submissões para turma ${selectedClass} e avaliação ${selectedAssessment}`);
+      // Filtrar por bimestre se selecionado
+      if (selectedBimestre !== "all") {
+        const bimNum = parseInt(selectedBimestre);
+        const assessmentData = assessments.find((a: any) => a.id === selectedAssessment);
+        if (assessmentData && assessmentData.bimestre === bimNum) {
+          // Manter os resultados se a avaliação é do bimestre selecionado
+        } else if (assessmentData && assessmentData.bimestre !== bimNum) {
+          studentResults = [];
+        }
+      }
+      
+
       
       // Dados para gráficos
       const studentAccuracy = studentResults
@@ -124,29 +134,13 @@ export default function Relatorios() {
         approvalRate,
       });
     } catch (err) {
-      console.error("Erro ao gerar relatório:", err);
+      // Erro ao gerar relatório
       toast.error("Erro ao gerar relatório");
     }
   };
 
-  const exportPDF = async () => {
-    if (!reportRef.current) return;
-    
-    try {
-      const canvas = await html2canvas(reportRef.current, { scale: 2 });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save("relatorio_avaliacoes.pdf");
-      toast.success("PDF exportado com sucesso!");
-    } catch (err) {
-      console.error("Erro ao exportar PDF:", err);
-      toast.error("Erro ao exportar PDF");
-    }
-  };
+  // Função de exportar PDF removida (dependência não instalada)
+  // Implementar com biblioteca alternativa se necessário
 
   if (loading) {
     return (
@@ -203,26 +197,22 @@ export default function Relatorios() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Período</label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <label className="text-sm font-medium">Bimestre</label>
+              <Select value={selectedBimestre} onValueChange={setSelectedBimestre}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todo período</SelectItem>
-                  <SelectItem value="week">Última semana</SelectItem>
-                  <SelectItem value="month">Último mês</SelectItem>
-                  <SelectItem value="quarter">Último trimestre</SelectItem>
+                  <SelectItem value="all">Anual (Todos)</SelectItem>
+                  <SelectItem value="1">1º Bimestre</SelectItem>
+                  <SelectItem value="2">2º Bimestre</SelectItem>
+                  <SelectItem value="3">3º Bimestre</SelectItem>
+                  <SelectItem value="4">4º Bimestre</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="flex items-end">
-              <Button onClick={exportPDF} className="w-full">
-                <Download className="w-4 h-4 mr-2" />
-                Exportar PDF
-              </Button>
-            </div>
+
           </div>
         </CardContent>
       </Card>

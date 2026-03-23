@@ -16,7 +16,7 @@ export default function DashboardHome() {
       return <AdminHome />;
     case "professor":
       return <ProfessorHome />;
-    case "student":
+    case "aluno":
       return <AlunoHome />;
     default:
       return <div className="text-muted-foreground">Papel não reconhecido.</div>;

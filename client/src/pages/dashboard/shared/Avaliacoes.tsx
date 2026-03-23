@@ -44,12 +44,14 @@ export default function Avaliacoes() {
     class_id: "",
     subject_id: "",
     total_questions: "10",
+    bimestre: "1",
   });
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
     total_questions: "10",
+    bimestre: "1",
   });
   const [editAnswers, setEditAnswers] = useState<Record<number, string>>({});
 
@@ -90,10 +92,11 @@ export default function Avaliacoes() {
           class_id: form.class_id,
           subject_id: form.subject_id,
           questions,
+          bimestre: parseInt(form.bimestre),
         }),
       });
       toast.success("Avaliação criada com sucesso");
-      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10" });
+      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1" });
       setAnswers({});
       setDialogOpen(false);
       loadData();
@@ -118,7 +121,7 @@ export default function Avaliacoes() {
 
   const startEdit = (assessment: any) => {
     setEditingId(assessment.id);
-    setEditForm({ title: assessment.title, total_questions: String(assessment.total_questions || 10) });
+    setEditForm({ title: assessment.title, total_questions: String(assessment.total_questions || 10), bimestre: String(assessment.bimestre || 1) });
     setEditAnswers({});
   };
 
@@ -140,6 +143,7 @@ export default function Avaliacoes() {
         body: JSON.stringify({
           title: editForm.title,
           questions,
+          bimestre: parseInt(editForm.bimestre),
         }),
       });
       toast.success("Avaliação atualizada com sucesso");
@@ -208,14 +212,28 @@ export default function Avaliacoes() {
                       </Select>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Número de Questões</Label>
-                    <Input
-                      type="number" min="1" max="50"
-                      value={form.total_questions}
-                      onChange={(e) => setForm({ ...form, total_questions: e.target.value })}
-                      className="bg-background/50 w-32"
-                    />
+                  <div className="flex gap-4">
+                    <div className="space-y-2">
+                      <Label>Número de Questões</Label>
+                      <Input
+                        type="number" min="1" max="50"
+                        value={form.total_questions}
+                        onChange={(e) => setForm({ ...form, total_questions: e.target.value })}
+                        className="bg-background/50 w-32"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Bimestre</Label>
+                      <Select value={form.bimestre} onValueChange={(v) => setForm({ ...form, bimestre: v })}>
+                        <SelectTrigger className="bg-background/50 w-32"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1º Bimestre</SelectItem>
+                          <SelectItem value="2">2º Bimestre</SelectItem>
+                          <SelectItem value="3">3º Bimestre</SelectItem>
+                          <SelectItem value="4">4º Bimestre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Gabarito</Label>
@@ -281,6 +299,7 @@ export default function Avaliacoes() {
                 <TableHead>Título</TableHead>
                 <TableHead>Turma</TableHead>
                 <TableHead>Disciplina</TableHead>
+                <TableHead>Bimestre</TableHead>
                 <TableHead>Questões</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead className="w-12"></TableHead>
@@ -295,6 +314,7 @@ export default function Avaliacoes() {
                     <TableCell className="font-medium">{a.title}</TableCell>
                     <TableCell className="text-muted-foreground">{cls?.name || "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{subj?.name || "—"}</TableCell>
+                    <TableCell><Badge variant="outline" className="font-mono">{a.bimestre || 1}º Bim</Badge></TableCell>
                     <TableCell className="font-mono">{a.total_questions || "—"}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">
                       <div className="flex items-center gap-1.5">
@@ -343,14 +363,28 @@ export default function Avaliacoes() {
                 className="bg-background/50"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Número de Questões</Label>
-              <Input
-                type="number" min="1" max="50"
-                value={editForm.total_questions}
-                onChange={(e) => setEditForm({ ...editForm, total_questions: e.target.value })}
-                className="bg-background/50 w-32"
-              />
+            <div className="flex gap-4">
+              <div className="space-y-2">
+                <Label>Número de Questões</Label>
+                <Input
+                  type="number" min="1" max="50"
+                  value={editForm.total_questions}
+                  onChange={(e) => setEditForm({ ...editForm, total_questions: e.target.value })}
+                  className="bg-background/50 w-32"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Bimestre</Label>
+                <Select value={editForm.bimestre} onValueChange={(v) => setEditForm({ ...editForm, bimestre: v })}>
+                  <SelectTrigger className="bg-background/50 w-32"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1º Bimestre</SelectItem>
+                    <SelectItem value="2">2º Bimestre</SelectItem>
+                    <SelectItem value="3">3º Bimestre</SelectItem>
+                    <SelectItem value="4">4º Bimestre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Gabarito</Label>

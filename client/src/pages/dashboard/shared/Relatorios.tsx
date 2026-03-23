@@ -42,7 +42,7 @@ export default function Relatorios() {
           try {
             const subs = await apiFetch(`/assessments/${a.id}/submissions`);
             if (Array.isArray(subs) && subs.length > 0) {
-              console.log(`Carregadas ${subs.length} submissões para avaliação ${a.id}`);
+
               allSubs.push(...subs.map((s: any) => ({
                 ...s,
                 assessment_id: a.id,
@@ -51,13 +51,13 @@ export default function Relatorios() {
               })));
             }
           } catch (err) {
-            console.error(`Erro ao carregar submissões da avaliação ${a.id}:`, err);
+            // Erro ao carregar submissões
           }
         }
-        console.log(`Total de submissões carregadas: ${allSubs.length}`);
+
         setSubmissions(allSubs);
       } catch (err) {
-        console.error("Erro ao carregar dados dos relatórios:", err);
+        // Erro ao carregar dados dos relatórios
       }
       setLoading(false);
     };
