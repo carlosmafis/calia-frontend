@@ -1,6 +1,6 @@
 // Calia Digital — Perfil do Usuário
 // Permite editar nome e visualizar informações da conta
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Shield, School, Save, Loader2, KeyRound } from "lucide-react";
+import { User, Mail, Shield, School, Save, Loader2, KeyRound, FileText, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const roleLabels: Record<string, string> = {
@@ -35,6 +35,26 @@ export default function Perfil() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [studentResults, setStudentResults] = useState<any[]>([]);
+  const [loadingResults, setLoadingResults] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === "aluno") {
+      loadStudentResults();
+    }
+  }, [user]);
+
+  const loadStudentResults = async () => {
+    setLoadingResults(true);
+    try {
+      const results = await apiFetch("/dashboard/student-results");
+      setStudentResults(Array.isArray(results) ? results : []);
+    } catch (err) {
+      setStudentResults([]);
+    } finally {
+      setLoadingResults(false);
+    }
+  };
 
   if (!user) return null;
 
@@ -164,6 +184,49 @@ export default function Perfil() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Student Results (only for alunos) */}
+          {user.role === "aluno" && (
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" /> Minhas Notas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingResults ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : studentResults.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nenhuma avaliação corrigida ainda</p>
+                ) : (
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                    {studentResults.map((result, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-background/30 border border-border/30">
+                        <div className="flex items-center gap-3 flex-1">
+                          {(result.score || 0) >= 6 ? (
+                            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{result.assessment_title || "Avaliação"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {result.subject_name || ""} {result.date ? `• ${new Date(result.date).toLocaleDateString("pt-BR")}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant={(result.score || 0) >= 6 ? "default" : "destructive"} className="text-sm font-bold flex-shrink-0 ml-2">
+                          {(result.score || 0).toFixed(1)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Change Password */}
           <Card className="bg-card/50 border-border/50">
