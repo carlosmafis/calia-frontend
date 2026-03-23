@@ -9,6 +9,9 @@ export default function DashboardHome() {
   const { user } = useAuth();
   if (!user) return null;
 
+  console.log("[DashboardHome] user.role:", user.role);
+  console.log("[DashboardHome] user:", user);
+
   switch (user.role) {
     case "super_admin":
       return <SuperAdminHome />;

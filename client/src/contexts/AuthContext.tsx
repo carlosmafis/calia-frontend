@@ -38,8 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const data = await apiFetch<UserProfile>("/me");
+      console.log("[AuthContext] /me response:", data);
+      console.log("[AuthContext] role:", data?.role);
       setUser(data);
-    } catch {
+    } catch (err: any) {
+      console.error("[AuthContext] Error fetching /me:", err.message);
       clearToken();
       setUser(null);
     } finally {
