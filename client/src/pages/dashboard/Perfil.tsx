@@ -124,6 +124,7 @@ export default function Perfil() {
 
         {/* Edit Info */}
         <div className="lg:col-span-2 space-y-6">
+          {user.role !== "aluno" && (
           <Card className="bg-card/50 border-border/50">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -184,6 +185,7 @@ export default function Perfil() {
               </div>
             </CardContent>
           </Card>
+          )}
 
           {/* Student Results (only for alunos) */}
           {user.role === "aluno" && (
