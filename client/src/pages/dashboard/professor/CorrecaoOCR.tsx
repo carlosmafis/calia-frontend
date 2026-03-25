@@ -301,13 +301,15 @@ export default function CorrecaoOCR() {
                       <p className="text-sm text-muted-foreground">Matrícula: {student.registration_number}</p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(status.status)}
-                      {status.status === "corrected" && (
-                        <Badge className="bg-green-500/20 text-green-700 dark:text-green-400">
-                          {status.score}/10
-                        </Badge>
-                      )}
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3 w-full md:w-auto">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {getStatusBadge(status.status)}
+                        {status.status === "corrected" && (
+                          <Badge className="bg-green-500/20 text-green-700 dark:text-green-400">
+                            {status.score}/10
+                          </Badge>
+                        )}
+                      </div>
                       <Dialog open={uploadDialogOpen && uploadingStudent === student.id} onOpenChange={(open) => {
                         if (!open) {
                           setUploadingStudent(null);
@@ -318,7 +320,7 @@ export default function CorrecaoOCR() {
                         }
                         setUploadDialogOpen(open);
                       }}>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full md:w-auto flex-wrap">
                           <Button
                             size="sm"
                             variant="outline"
@@ -326,7 +328,7 @@ export default function CorrecaoOCR() {
                               setUploadingStudent(student.id);
                               setUploadDialogOpen(true);
                             }}
-                            className="gap-2"
+                            className="gap-2 flex-1 md:flex-none"
                             disabled={status.status === "absent"}
                           >
                             {status.status === "corrected" ? (
@@ -349,7 +351,7 @@ export default function CorrecaoOCR() {
                               size="sm"
                               variant="outline"
                               onClick={() => markAsAbsent(student.id)}
-                              className="gap-2"
+                              className="gap-2 flex-1 md:flex-none"
                             >
                               <AlertCircle className="w-4 h-4" /> Ausente
                             </Button>
