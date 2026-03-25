@@ -57,6 +57,27 @@ export default function CorrecaoOCR() {
     }
   }, [selectedClass, selectedAssessment]);
 
+  const markAsAbsent = async (studentId: string) => {
+    try {
+      await apiFetch(`/assessments/${selectedAssessment}/mark-absent`, {
+        method: "POST",
+        body: JSON.stringify({ student_id: studentId }),
+      });
+      
+      setStudentProofStatus(prev => ({
+        ...prev,
+        [studentId]: {
+          status: "absent",
+          score: null,
+        }
+      }));
+      
+      toast.success("Aluno marcado como ausente");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao marcar ausência");
+    }
+  };
+
   const loadProofStatus = async () => {
     try {
       // Buscar resultados da avaliação para verificar quais alunos já foram corrigidos
@@ -67,11 +88,18 @@ export default function CorrecaoOCR() {
       const status: Record<string, any> = {};
       if (Array.isArray(results)) {
         results.forEach((result: any) => {
-          if (result.student_id && result.score !== null && result.score !== undefined) {
-            status[result.student_id] = {
-              status: "corrected",
-              score: result.score, // Score já vem como número de acertos (ex: 9)
-            };
+          if (result.student_id) {
+            if (result.status === "ausente") {
+              status[result.student_id] = {
+                status: "absent",
+                score: null,
+              };
+            } else if (result.score !== null && result.score !== undefined) {
+              status[result.student_id] = {
+                status: "corrected",
+                score: result.score,
+              };
+            }
           }
         });
       }
@@ -287,25 +315,43 @@ export default function CorrecaoOCR() {
                         }
                         setUploadDialogOpen(open);
                       }}>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setUploadingStudent(student.id);
-                            setUploadDialogOpen(true);
-                          }}
-                          className="gap-2"
-                        >
-                          {status.status === "corrected" ? (
-                            <>
-                              <CheckCircle2 className="w-4 h-4" /> Corrigida
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4" /> Upload
-                            </>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setUploadingStudent(student.id);
+                              setUploadDialogOpen(true);
+                            }}
+                            className="gap-2"
+                            disabled={status.status === "absent"}
+                          >
+                            {status.status === "corrected" ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4" /> Corrigida
+                              </>
+                            ) : status.status === "absent" ? (
+                              <>
+                                <AlertCircle className="w-4 h-4" /> Ausente
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4" /> Upload
+                              </>
+                            )}
+                          </Button>
+                          
+                          {status.status !== "absent" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => markAsAbsent(student.id)}
+                              className="gap-2"
+                            >
+                              <AlertCircle className="w-4 h-4" /> Ausente
+                            </Button>
                           )}
-                        </Button>
+                        </div>
 
                         <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
