@@ -59,9 +59,12 @@ export default function CorrecaoOCR() {
 
   const markAsAbsent = async (studentId: string) => {
     try {
-      await apiFetch(`/assessments/${selectedAssessment}/mark-absent`, {
+      await apiFetch(`/ocr/mark-absent`, {
         method: "POST",
-        body: JSON.stringify({ student_id: studentId }),
+        body: JSON.stringify({ 
+          assessment_id: selectedAssessment,
+          student_id: studentId 
+        }),
       });
       
       setStudentProofStatus(prev => ({
@@ -89,7 +92,7 @@ export default function CorrecaoOCR() {
       if (Array.isArray(results)) {
         results.forEach((result: any) => {
           if (result.student_id) {
-            if (result.status === "ausente") {
+            if (result.status === "ausente" || result.status === "absent") {
               status[result.student_id] = {
                 status: "absent",
                 score: null,
