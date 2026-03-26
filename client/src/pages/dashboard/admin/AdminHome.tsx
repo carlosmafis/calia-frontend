@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import HistoricalAnalysis from "../HistoricalAnalysis";
+import HistoricalAnalysisAdmin from "../HistoricalAnalysisAdmin";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend
 } from "recharts";
@@ -227,7 +227,7 @@ export default function AdminHome() {
         </TabsContent>
 
         <TabsContent value="historical">
-          <HistoricalAnalysis />
+          <HistoricalAnalysisAdmin />
         </TabsContent>
       </Tabs>
     </div>

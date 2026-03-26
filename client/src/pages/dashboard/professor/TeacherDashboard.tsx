@@ -17,7 +17,7 @@ import {
   BarChart3, Users, ArrowRight
 } from "lucide-react";
 import { useLocation } from "wouter";
-import HistoricalAnalysis from "../HistoricalAnalysis";
+import HistoricalAnalysisTeacher from "../HistoricalAnalysisTeacher";
 
 export default function TeacherDashboard() {
   const [, navigate] = useLocation();
@@ -308,7 +308,7 @@ export default function TeacherDashboard() {
 
         {/* ANALISE HISTORICA */}
         <TabsContent value="historical">
-          <HistoricalAnalysis />
+          <HistoricalAnalysisTeacher classId={selectedClass} />
         </TabsContent>
       </Tabs>
     </div>
