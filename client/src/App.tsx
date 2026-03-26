@@ -33,6 +33,7 @@ import Turmas from "./pages/dashboard/shared/Turmas";
 import Avaliacoes from "./pages/dashboard/shared/Avaliacoes";
 import AvaliacaoDetalhes from "./pages/dashboard/shared/AvaliacaoDetalhes";
 import Relatorios from "./pages/dashboard/Relatorios";
+import HistoricalAnalysis from "./pages/dashboard/HistoricalAnalysis";
 
 // Professor
 import CorrecaoOCR from "./pages/dashboard/professor/CorrecaoOCR";
@@ -128,6 +129,9 @@ function Router() {
       {/* All roles */}
       <Route path="/dashboard/relatorios">
         <ProtectedRoute><Relatorios /></ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/historical">
+        <ProtectedRoute allowedRoles={["admin", "super_admin", "professor"]}><HistoricalAnalysis /></ProtectedRoute>
       </Route>
 
       {/* Aluno */}
