@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,17 +68,18 @@ export default function AdminDashboard() {
         description="Monitoramento geral da escola"
       />
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-card/50 border border-border/50">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="classes">Turmas</TabsTrigger>
-          <TabsTrigger value="students">Alunos</TabsTrigger>
-          <TabsTrigger value="teachers">Professores</TabsTrigger>
-          <TabsTrigger value="alerts">Alertas</TabsTrigger>
-        </TabsList>
+      <div className="flex justify-between items-center mb-4">
+        <Tabs defaultValue="overview" className="space-y-6 flex-1">
+          <TabsList className="bg-card/50 border border-border/50">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="classes">Turmas</TabsTrigger>
+            <TabsTrigger value="students">Alunos</TabsTrigger>
+            <TabsTrigger value="teachers">Professores</TabsTrigger>
+            <TabsTrigger value="alerts">Alertas</TabsTrigger>
+          </TabsList>
 
-        {/* VISÃO GERAL */}
-        <TabsContent value="overview" className="space-y-6">
+          {/* VISÃO GERAL */}
+          <TabsContent value="overview" className="space-y-6">
           {/* KPIs */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <Card className="bg-card/50 border-border/50">
@@ -322,6 +323,14 @@ export default function AdminDashboard() {
           )}
         </TabsContent>
       </Tabs>
+      <Button
+        onClick={() => navigate("/dashboard/historical")}
+        variant="outline"
+        className="mt-4"
+      >
+        📊 Análise Histórica
+      </Button>
+      </div>
     </div>
   );
 }
