@@ -68,8 +68,7 @@ export default function AdminDashboard() {
         description="Monitoramento geral da escola"
       />
 
-      <div className="flex justify-between items-center mb-4">
-        <Tabs defaultValue="overview" className="space-y-6 flex-1">
+      <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-card/50 border border-border/50">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="classes">Turmas</TabsTrigger>
@@ -323,14 +322,14 @@ export default function AdminDashboard() {
           )}
         </TabsContent>
       </Tabs>
+
       <Button
         onClick={() => navigate("/dashboard/historical")}
         variant="outline"
-        className="mt-4"
+        className="mt-6"
       >
         📊 Análise Histórica
       </Button>
-      </div>
     </div>
   );
 }
