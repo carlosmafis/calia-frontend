@@ -6,7 +6,8 @@ import StatCard from "@/components/StatCard";
 import { BookOpen, GraduationCap, UserCircle, FileText, BarChart3, TrendingUp, TrendingDown, AlertTriangle, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend
 } from "recharts";
@@ -14,6 +15,7 @@ import {
 const COLORS = ["#14B8A6", "#D97706", "#059669", "#8B5CF6", "#EF4444", "#3B82F6"];
 
 export default function AdminHome() {
+  const [, navigate] = useLocation();
   const [classes, setClasses] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [assessments, setAssessments] = useState<any[]>([]);
@@ -210,6 +212,18 @@ export default function AdminHome() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Botão de Análise Histórica */}
+      <div className="mt-8 flex justify-center">
+        <Button
+          onClick={() => navigate("/dashboard/historical")}
+          variant="outline"
+          size="lg"
+          className="gap-2"
+        >
+          📊 Análise Histórica
+        </Button>
       </div>
     </div>
   );
