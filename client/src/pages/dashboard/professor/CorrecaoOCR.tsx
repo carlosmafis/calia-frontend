@@ -81,6 +81,29 @@ export default function CorrecaoOCR() {
     }
   };
 
+  const removeAbsent = async (studentId: string) => {
+    try {
+      // Remover a submissão de ausência
+      await apiFetch(`/ocr/remove-absent`, {
+        method: "POST",
+        body: JSON.stringify({ 
+          assessment_id: selectedAssessment,
+          student_id: studentId 
+        }),
+      });
+      
+      setStudentProofStatus(prev => {
+        const updated = { ...prev };
+        delete updated[studentId];
+        return updated;
+      });
+      
+      toast.success("Ausência removida");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao remover ausência");
+    }
+  };
+
   const loadProofStatus = async () => {
     try {
       // Buscar resultados da avaliação para verificar quais alunos já foram corrigidos
@@ -354,6 +377,17 @@ export default function CorrecaoOCR() {
                               className="gap-2 flex-1 md:flex-none"
                             >
                               <AlertCircle className="w-4 h-4" /> Ausente
+                            </Button>
+                          )}
+                          
+                          {status.status === "absent" && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => removeAbsent(student.id)}
+                              className="gap-2 flex-1 md:flex-none"
+                            >
+                              <X className="w-4 h-4" /> Remover Ausência
                             </Button>
                           )}
                         </div>
