@@ -81,8 +81,10 @@ export default function AvaliacaoDetalhes({ id }: { id: string }) {
   const scores = submissions.map((sub) => {
     let answers: Record<string, string> = {};
     try {
-      if (typeof sub.answers === "string") answers = JSON.parse(sub.answers);
-      else if (sub.answers) answers = sub.answers;
+      // Tentar usar extracted_answers primeiro (campo correto do backend)
+      const answerField = sub.extracted_answers || sub.answers;
+      if (typeof answerField === "string") answers = JSON.parse(answerField);
+      else if (answerField) answers = answerField;
     } catch {}
 
     const student = students.find((s) => s.id === sub.student_id);
@@ -151,7 +153,7 @@ export default function AvaliacaoDetalhes({ id }: { id: string }) {
     const optionCounts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0, BRANCO: 0 };
 
     scores.forEach((s) => {
-      const ans = s.answers[qNum] || "BRANCO";
+      const ans = (s.answers && s.answers[qNum]) || "BRANCO";
       if (ans.toUpperCase() === expected.toUpperCase()) correctCount++;
       if (optionCounts[ans.toUpperCase()] !== undefined) optionCounts[ans.toUpperCase()]++;
       else optionCounts["BRANCO"]++;
