@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import HistoricalAnalysis from "../HistoricalAnalysis";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend
 } from "recharts";
@@ -23,6 +25,7 @@ export default function AdminHome() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     const load = async () => {
@@ -88,6 +91,13 @@ export default function AdminHome() {
         description="Visão geral da sua escola"
       />
 
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="bg-card/50 border border-border/50">
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="historical">Análise Histórica</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <StatCard title="Turmas" value={classes.length} icon={BookOpen} />
@@ -214,17 +224,12 @@ export default function AdminHome() {
         </Card>
       </div>
 
-      {/* Botão de Análise Histórica */}
-      <div className="mt-8 flex justify-center">
-        <Button
-          onClick={() => navigate("/dashboard/historical")}
-          variant="outline"
-          size="lg"
-          className="gap-2"
-        >
-          📊 Análise Histórica
-        </Button>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="historical">
+          <HistoricalAnalysis />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

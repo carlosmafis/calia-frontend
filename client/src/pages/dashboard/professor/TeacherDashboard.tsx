@@ -17,6 +17,7 @@ import {
   BarChart3, Users, ArrowRight
 } from "lucide-react";
 import { useLocation } from "wouter";
+import HistoricalAnalysis from "../HistoricalAnalysis";
 
 export default function TeacherDashboard() {
   const [, navigate] = useLocation();
@@ -104,6 +105,7 @@ export default function TeacherDashboard() {
           <TabsTrigger value="alunos">Alunos</TabsTrigger>
           <TabsTrigger value="risco">Em Risco</TabsTrigger>
           <TabsTrigger value="questoes">Questões</TabsTrigger>
+          <TabsTrigger value="historical">Análise Histórica</TabsTrigger>
         </TabsList>
 
         {/* RESUMO */}
@@ -302,6 +304,11 @@ export default function TeacherDashboard() {
               <p className="text-muted-foreground">Selecione uma avaliação para ver análise de questões</p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ANALISE HISTORICA */}
+        <TabsContent value="historical">
+          <HistoricalAnalysis />
         </TabsContent>
       </Tabs>
     </div>
