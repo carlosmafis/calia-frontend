@@ -100,7 +100,7 @@ export default function TeacherDashboard() {
       </div>
 
       <Tabs defaultValue="resumo" className="space-y-6">
-        <TabsList className="bg-card/50 border border-border/50">
+        <TabsList className="bg-card/50 border border-border/50 grid grid-cols-5 w-full">
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="alunos">Alunos</TabsTrigger>
           <TabsTrigger value="risco">Em Risco</TabsTrigger>

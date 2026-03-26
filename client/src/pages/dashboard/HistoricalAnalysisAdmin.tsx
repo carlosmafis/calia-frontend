@@ -39,9 +39,9 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         const [c, t, s] = await Promise.all([
-          apiFetch("/classes").catch(() => []),
-          apiFetch("/teachers").catch(() => []),
-          apiFetch("/students").catch(() => []),
+          apiFetch("/admin/classes").catch(() => []),
+          apiFetch("/admin/teachers").catch(() => []),
+          apiFetch("/admin/students").catch(() => []),
         ]);
         setClasses(c || []);
         setTeachers(t || []);
@@ -393,14 +393,18 @@ export default function HistoricalAnalysisAdmin() {
             <CardContent className="pt-6">
               <Select value={selectedClassId} onValueChange={setSelectedClassId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione uma turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id}>
-                      {cls.name}
-                    </SelectItem>
-                  ))}
+                  {classes && classes.length > 0 ? (
+                    classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>Nenhuma turma disponível</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </CardContent>
@@ -446,14 +450,18 @@ export default function HistoricalAnalysisAdmin() {
             <CardContent className="pt-6">
               <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione um professor" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
+                  {teachers && teachers.length > 0 ? (
+                    teachers.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>Nenhum professor disponível</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </CardContent>
@@ -499,14 +507,18 @@ export default function HistoricalAnalysisAdmin() {
             <CardContent className="pt-6">
               <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione um aluno" />
                 </SelectTrigger>
                 <SelectContent>
-                  {students.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
+                  {students && students.length > 0 ? (
+                    students.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>Nenhum aluno disponível</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </CardContent>
