@@ -37,6 +37,12 @@ import Relatorios from "./pages/dashboard/Relatorios";
 // Professor
 import CorrecaoOCR from "./pages/dashboard/professor/CorrecaoOCR";
 import CorrecaoManual from "./pages/dashboard/professor/CorrecaoManual";
+import TeacherDashboard from "./pages/dashboard/professor/TeacherDashboard";
+import StudentProgress from "./pages/dashboard/professor/StudentProgress";
+import QuestionAnalysis from "./pages/dashboard/professor/QuestionAnalysis";
+
+// Admin Dashboard
+import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
 
 // Aluno
 import Notas from "./pages/dashboard/aluno/Notas";
@@ -70,6 +76,9 @@ function Router() {
       </Route>
 
       {/* Admin */}
+      <Route path="/dashboard/admin">
+        <ProtectedRoute allowedRoles={["admin", "super_admin"]}><AdminDashboard /></ProtectedRoute>
+      </Route>
       <Route path="/dashboard/professores">
         <ProtectedRoute allowedRoles={["admin", "super_admin"]}><Professores /></ProtectedRoute>
       </Route>
@@ -96,6 +105,19 @@ function Router() {
       </Route>
 
       {/* Professor */}
+      <Route path="/dashboard/teacher">
+        <ProtectedRoute allowedRoles={["professor"]}><TeacherDashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/student/:id">
+        {(params) => (
+          <ProtectedRoute allowedRoles={["professor"]}>
+            <StudentProgress id={params.id} />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path="/dashboard/questions-analysis">
+        <ProtectedRoute allowedRoles={["professor"]}><QuestionAnalysis /></ProtectedRoute>
+      </Route>
       <Route path="/dashboard/correcao">
         <ProtectedRoute allowedRoles={["professor"]}><CorrecaoOCR /></ProtectedRoute>
       </Route>
