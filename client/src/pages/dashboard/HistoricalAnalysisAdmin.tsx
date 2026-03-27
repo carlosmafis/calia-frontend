@@ -456,7 +456,7 @@ export default function HistoricalAnalysisAdmin() {
                   {teachers && teachers.length > 0 ? (
                     teachers.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
-                        {t.name}
+                        {t.full_name || t.name}
                       </SelectItem>
                     ))
                   ) : (
