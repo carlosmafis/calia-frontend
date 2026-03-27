@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { ScanLine, Upload, Loader2, CheckCircle2, Clock, AlertCircle, Camera, X } from "lucide-react";
 import { toast } from "sonner";
 
-const OPTIONS = ["A", "B", "C", "D", "E"];
+const OPTIONS = ["A", "B", "C", "D", "E", "ANULAR"];
 
 export default function CorrecaoOCR() {
   const [classes, setClasses] = useState<any[]>([]);
@@ -505,7 +505,7 @@ export default function CorrecaoOCR() {
                                     <p className="text-sm text-muted-foreground">
                                       Resposta detectada: <strong>{editingQuestion !== null && (Array.isArray(result.answers) ? result.answers[editingQuestion] : Object.values(result.answers || {})[editingQuestion])}</strong>
                                     </p>
-                                    <div className="grid grid-cols-5 gap-2">
+                                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                                       {OPTIONS.map((option) => (
                                         <Button
                                           key={option}
