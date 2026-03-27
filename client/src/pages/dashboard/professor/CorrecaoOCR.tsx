@@ -32,6 +32,7 @@ export default function CorrecaoOCR() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [studentProofStatus, setStudentProofStatus] = useState<Record<string, any>>({});
   const [editingQuestion, setEditingQuestion] = useState<number | null>(null);
+  const [answersWithWeight, setAnswersWithWeight] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -176,6 +177,7 @@ export default function CorrecaoOCR() {
         body: formData,
       });
       setResult(data);
+      setAnswersWithWeight(data.answers_with_weight || {});
       // Converter answers de objeto para array se necessário
       const answersArray = Array.isArray(data.answers)
         ? data.answers
@@ -202,6 +204,7 @@ export default function CorrecaoOCR() {
           assessment_id: selectedAssessment,
           student_id: uploadingStudent,
           answers: editingAnswers,
+          answers_with_weight: answersWithWeight,
         }),
       });
       toast.success("Correção confirmada e salva!");
@@ -214,6 +217,7 @@ export default function CorrecaoOCR() {
       setPreview(null);
       setResult(null);
       setEditingAnswers({});
+      setAnswersWithWeight({});
       setUploadingStudent(null);
       setUploadDialogOpen(false);
     } catch (err: any) {
