@@ -1,5 +1,3 @@
-// Calia Digital — Relatórios Profissionais
-// Visão geral, comparativo entre turmas, análise por avaliação, indicadores de risco
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, BarChart3, TrendingUp, AlertTriangle, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Loader2, BarChart3, AlertTriangle, Users, FileText } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -20,49 +20,52 @@ const COLORS = ["#14B8A6", "#8B5CF6", "#D97706", "#EF4444", "#3B82F6", "#059669"
 export default function Relatorios() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [classes, setClasses] = useState<any[]>([]);
   const [assessments, setAssessments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
+  const [selectedAssessment, setSelectedAssessment] = useState("");
+  const [assessment, setAssessment] = useState<any>(null);
   const [submissions, setSubmissions] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [cl, as_, stu] = await Promise.all([
-          apiFetch("/classes").catch(() => []),
+        const [as_, stu] = await Promise.all([
           apiFetch("/assessments").catch(() => []),
           apiFetch("/students").catch(() => []),
         ]);
-        setClasses(cl || []);
         setAssessments(as_ || []);
         setStudents(stu || []);
-
-        const allSubs: any[] = [];
-        for (const a of (as_ || [])) {
-          try {
-            const subs = await apiFetch(`/assessments/${a.id}/submissions`);
-            if (Array.isArray(subs) && subs.length > 0) {
-
-              allSubs.push(...subs.map((s: any) => ({
-                ...s,
-                assessment_id: a.id,
-                assessment_title: a.title,
-                class_id: a.class_id
-              })));
-            }
-          } catch (err) {
-            // Erro ao carregar submissões
-          }
+        
+        // Selecionar primeira avaliação por padrão
+        if ((as_ || []).length > 0) {
+          setSelectedAssessment((as_[0] as any).id);
         }
-
-        setSubmissions(allSubs);
       } catch (err) {
-        // Erro ao carregar dados dos relatórios
+        // Erro ao carregar dados
       }
       setLoading(false);
     };
     load();
   }, []);
+
+  // Carregar dados da avaliação selecionada
+  useEffect(() => {
+    if (!selectedAssessment) return;
+
+    const load = async () => {
+      try {
+        const [a, sub] = await Promise.all([
+          apiFetch(`/assessments/${selectedAssessment}`).catch(() => null),
+          apiFetch(`/assessments/${selectedAssessment}/submissions`).catch(() => []),
+        ]);
+        setAssessment(a);
+        setSubmissions(sub || []);
+      } catch (err) {
+        // Erro ao carregar dados da avaliação
+      }
+    };
+    load();
+  }, [selectedAssessment]);
 
   if (loading) {
     return (
@@ -72,273 +75,397 @@ export default function Relatorios() {
     );
   }
 
-  // Class-level stats
-  const classStats = classes.map((cls) => {
-    const classStudents = students.filter((s) => s.class_id === cls.id);
-    const classSubs = submissions.filter((s) => s.class_id === cls.id);
-    const scores = classSubs.map((s) => s.score || 0);
-    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-    const approved = scores.filter((s) => s >= 6).length;
-    const approvalRate = scores.length > 0 ? (approved / scores.length) * 100 : 0;
-    return { name: cls.name, id: cls.id, students: classStudents.length, submissions: classSubs.length, avg: Math.round(avg * 10) / 10, approvalRate: Math.round(approvalRate) };
+  // Parse answer_key
+  let answerKey: Record<string, string> = {};
+  try {
+    if (assessment && typeof assessment.answer_key === "string") {
+      answerKey = JSON.parse(assessment.answer_key);
+    } else if (assessment && assessment.answer_key) {
+      answerKey = assessment.answer_key;
+    }
+  } catch {}
+
+  // Compute scores
+  const scores = submissions.map((sub) => {
+    let answers: Record<string, string> = {};
+    try {
+      const answerField = sub.extracted_answers || sub.answers;
+      if (typeof answerField === "string") answers = JSON.parse(answerField);
+      else if (answerField) answers = answerField;
+    } catch {}
+
+    const student = students.find((s) => s.id === sub.student_id);
+    const totalQ = Object.keys(answerKey).length || assessment?.total_questions || 10;
+    let correct = 0;
+    let wrong = 0;
+    let blank = 0;
+
+    Object.entries(answerKey).forEach(([q, expected]) => {
+      const answer = answers[q] || "BRANCO";
+      const isCorrect = answer.toUpperCase() === (expected as string).toUpperCase();
+      if (answer === "BRANCO" || answer === "") blank++;
+      else if (isCorrect) correct++;
+      else wrong++;
+    });
+
+    const score = totalQ > 0 ? Math.round((correct / totalQ) * 100) / 10 : 0;
+
+    return {
+      student_id: sub.student_id,
+      student_name: student?.name || "Aluno desconhecido",
+      registration: student?.registration || "—",
+      correct,
+      wrong,
+      blank,
+      score: sub.score != null ? sub.score : score,
+      answers,
+    };
   });
 
-  // Per-assessment stats
-  const assessmentStats = assessments.map((a) => {
-    const subs = submissions.filter((s) => s.assessment_id === a.id);
-    const scores = subs.map((s) => s.score || 0);
-    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-    const cls = classes.find((c) => c.id === a.class_id);
-    return { title: a.title, id: a.id, class_name: cls?.name || "—", submissions: subs.length, avg: Math.round(avg * 10) / 10, max: scores.length > 0 ? Math.max(...scores) : 0, min: scores.length > 0 ? Math.min(...scores) : 0 };
+  // Statistics
+  const allScores = scores.map((s) => s.score);
+  const avg = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
+  const sorted = [...allScores].sort((a, b) => a - b);
+  const median = sorted.length > 0
+    ? sorted.length % 2 === 0
+      ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+      : sorted[Math.floor(sorted.length / 2)]
+    : 0;
+  const stdDev = allScores.length > 0
+    ? Math.sqrt(allScores.reduce((sum, s) => sum + Math.pow(s - avg, 2), 0) / allScores.length)
+    : 0;
+  const maxScore = allScores.length > 0 ? Math.max(...allScores) : 0;
+  const minScore = allScores.length > 0 ? Math.min(...allScores) : 0;
+  const approvedCount = allScores.filter((s) => s >= 6).length;
+  const failedCount = allScores.filter((s) => s < 6).length;
+
+  // Distribution histogram
+  const distribution = [
+    { range: "0-2", count: allScores.filter((s) => s >= 0 && s < 2).length },
+    { range: "2-4", count: allScores.filter((s) => s >= 2 && s < 4).length },
+    { range: "4-6", count: allScores.filter((s) => s >= 4 && s < 6).length },
+    { range: "6-8", count: allScores.filter((s) => s >= 6 && s < 8).length },
+    { range: "8-10", count: allScores.filter((s) => s >= 8 && s <= 10).length },
+  ];
+
+  // Per-question analysis
+  const totalQ = Object.keys(answerKey).length || assessment?.total_questions || 10;
+  const questionAnalysis = Array.from({ length: totalQ }, (_, i) => {
+    const qNum = String(i + 1);
+    const expected = answerKey[qNum] || "?";
+    let correctCount = 0;
+    const optionCounts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0, BRANCO: 0 };
+
+    scores.forEach((s) => {
+      const ans = (s.answers && s.answers[qNum]) || "BRANCO";
+      if (ans.toUpperCase() === expected.toUpperCase()) correctCount++;
+      if (optionCounts[ans.toUpperCase()] !== undefined) optionCounts[ans.toUpperCase()]++;
+      else optionCounts["BRANCO"]++;
+    });
+
+    const pct = submissions.length > 0 ? Math.round((correctCount / submissions.length) * 100) : 0;
+    return { question: qNum, expected, correctCount, pct, optionCounts };
   });
 
-  // Student performance
-  const studentPerformance = students.map((stu) => {
-    const stuSubs = submissions.filter((s) => s.student_id === stu.id);
-    const scores = stuSubs.map((s) => s.score || 0);
-    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-    const cls = classes.find((c) => c.id === stu.class_id);
-    return { ...stu, class_name: cls?.name || "—", avg: Math.round(avg * 10) / 10, totalSubs: stuSubs.length };
-  });
+  const hardQuestions = questionAnalysis.filter((q) => q.pct < 40);
+  const easyQuestions = questionAnalysis.filter((q) => q.pct > 80);
 
-  const riskStudents = studentPerformance.filter((s) => s.totalSubs > 0 && s.avg < 5);
-  const topStudents = [...studentPerformance].filter((s) => s.totalSubs > 0).sort((a, b) => b.avg - a.avg).slice(0, 10);
+  // Ranking
+  const ranking = [...scores].sort((a, b) => b.score - a.score);
 
-  // Overall
-  const totalSubs = submissions.length;
-  const allScores = submissions.map((s) => s.score || 0);
-  const overallAvg = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
-  const overallApproval = allScores.length > 0 ? (allScores.filter((s) => s >= 6).length / allScores.length) * 100 : 0;
+  // Approved vs Failed pie
+  const approvalData = [
+    { name: "Aprovados (≥6)", value: approvedCount },
+    { name: "Reprovados (<6)", value: failedCount },
+  ];
 
   return (
     <div>
-      <PageHeader title="Relatórios e Análises" description="Visão completa do desempenho acadêmico" />
+      <PageHeader
+        title="Relatórios"
+        description="Análise detalhada de avaliações"
+      />
 
-      {/* KPIs */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Total de Correções</p>
-            <p className="text-3xl font-bold font-mono text-primary">{totalSubs}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Média Geral</p>
-            <p className="text-3xl font-bold font-mono">{overallAvg.toFixed(1)}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Taxa de Aprovação</p>
-            <p className="text-3xl font-bold font-mono text-emerald-400">{overallApproval.toFixed(0)}%</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Alunos em Risco</p>
-            <p className="text-3xl font-bold font-mono text-red-400">{riskStudents.length}</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Seletor de Avaliações */}
+      <Card className="bg-card/50 border-border/50 mb-6">
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <Label>Selecione uma Avaliação</Label>
+            <Select value={selectedAssessment} onValueChange={setSelectedAssessment}>
+              <SelectTrigger className="bg-card/50">
+                <SelectValue placeholder="Escolha a avaliação..." />
+              </SelectTrigger>
+              <SelectContent>
+                {assessments.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
-      <Tabs defaultValue="turmas" className="space-y-6">
-        <TabsList className="bg-card/50 border border-border/50">
-          <TabsTrigger value="turmas">Por Turma</TabsTrigger>
-          <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
-          <TabsTrigger value="ranking">Ranking</TabsTrigger>
-          <TabsTrigger value="risco">Indicadores de Risco</TabsTrigger>
-        </TabsList>
+      {!assessment || submissions.length === 0 ? (
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="py-16 text-center">
+            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Nenhuma correção realizada ainda para esta avaliação.</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Use a Correção OCR ou Manual para corrigir as provas dos alunos.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="resumo" className="space-y-6">
+          <TabsList className="bg-card/50 border border-border/50">
+            <TabsTrigger value="resumo">Resumo</TabsTrigger>
+            <TabsTrigger value="ranking">Ranking</TabsTrigger>
+            <TabsTrigger value="questoes">Por Questão</TabsTrigger>
+            <TabsTrigger value="gabarito">Gabarito</TabsTrigger>
+          </TabsList>
 
-        {/* POR TURMA */}
-        <TabsContent value="turmas" className="space-y-6">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" /> Média por Turma</CardTitle></CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={classStats}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
-                    <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} domain={[0, 10]} />
-                    <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
-                    <Bar dataKey="avg" name="Média" fill="#14B8A6" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
+          {/* RESUMO */}
+          <TabsContent value="resumo" className="space-y-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Média</p>
+                  <p className="text-2xl font-bold font-mono text-primary">{avg.toFixed(1)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Mediana</p>
+                  <p className="text-2xl font-bold font-mono">{median.toFixed(1)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Desvio Padrão</p>
+                  <p className="text-2xl font-bold font-mono">{stdDev.toFixed(2)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Maior Nota</p>
+                  <p className="text-2xl font-bold font-mono text-emerald-400">{maxScore.toFixed(1)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Menor Nota</p>
+                  <p className="text-2xl font-bold font-mono text-red-400">{minScore.toFixed(1)}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Distribution */}
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-primary" /> Distribuição de Notas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={distribution}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="range" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                      <Bar dataKey="count" name="Alunos" fill="#14B8A6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Approval Pie */}
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" /> Taxa de Aprovação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie data={approvalData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={4} dataKey="value">
+                        <Cell fill="#059669" />
+                        <Cell fill="#EF4444" />
+                      </Pie>
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                      <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Alerts */}
+            {hardQuestions.length > 0 && (
+              <Card className="bg-red-500/5 border-red-500/20">
+                <CardContent className="p-4 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-400">Questões Difíceis (acerto &lt; 40%)</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Questões {hardQuestions.map((q) => q.question).join(", ")} tiveram baixo índice de acerto.
+                      Considere revisar o conteúdo com os alunos.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* RANKING */}
+          <TabsContent value="ranking">
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50 hover:bg-transparent">
+                    <TableHead className="w-16">#</TableHead>
+                    <TableHead>Aluno</TableHead>
+                    <TableHead>Matrícula</TableHead>
+                    <TableHead className="text-center">Acertos</TableHead>
+                    <TableHead className="text-center">Erros</TableHead>
+                    <TableHead className="text-center">Em Branco</TableHead>
+                    <TableHead className="text-center">Nota</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ranking.map((r, idx) => (
+                    <TableRow key={r.student_id} className="border-border/30">
+                      <TableCell className="font-mono text-muted-foreground">
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}º`}
+                      </TableCell>
+                      <TableCell className="font-medium">{r.student_name}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">{r.registration}</TableCell>
+                      <TableCell className="text-center font-mono text-emerald-400">{r.correct}</TableCell>
+                      <TableCell className="text-center font-mono text-red-400">{r.wrong}</TableCell>
+                      <TableCell className="text-center font-mono text-muted-foreground">{r.blank}</TableCell>
+                      <TableCell className="text-center">
+                        <span className={`font-mono font-bold text-lg ${r.score >= 6 ? "text-emerald-400" : "text-red-400"}`}>
+                          {typeof r.score === "number" ? r.score.toFixed(1) : r.score}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={r.score >= 6 ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-red-500/15 text-red-400 border-red-500/30"}>
+                          {r.score >= 6 ? "Aprovado" : "Reprovado"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </Card>
+          </TabsContent>
+
+          {/* POR QUESTÃO */}
+          <TabsContent value="questoes" className="space-y-6">
             <Card className="bg-card/50 border-border/50">
-              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Taxa de Aprovação por Turma</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-lg">Índice de Acerto por Questão</CardTitle>
+              </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={classStats}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={questionAnalysis}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
+                    <XAxis dataKey="question" tick={{ fill: "#a1a1aa", fontSize: 11 }} label={{ value: "Questão", position: "insideBottom", offset: -5, fill: "#a1a1aa" }} />
                     <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} domain={[0, 100]} unit="%" />
-                    <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} formatter={(v: number) => [`${v}%`, "Aprovação"]} />
-                    <Bar dataKey="approvalRate" name="Aprovação" radius={[4, 4, 0, 0]}>
-                      {classStats.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
+                    <Tooltip
+                      contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
+                      formatter={(value: number) => [`${value}%`, "Acerto"]}
+                    />
+                    <Bar dataKey="pct" name="% Acerto" radius={[4, 4, 0, 0]}>
+                      {questionAnalysis.map((q, i) => (
+                        <Cell key={i} fill={q.pct >= 70 ? "#059669" : q.pct >= 40 ? "#D97706" : "#EF4444"} />
+                      ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          </div>
-          <Card className="bg-card/50 border-border/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50 hover:bg-transparent">
-                  <TableHead>Turma</TableHead>
-                  <TableHead className="text-center">Alunos</TableHead>
-                  <TableHead className="text-center">Correções</TableHead>
-                  <TableHead className="text-center">Média</TableHead>
-                  <TableHead>Aprovação</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {classStats.map((c) => (
-                  <TableRow key={c.id} className="border-border/30">
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell className="text-center font-mono">{c.students}</TableCell>
-                    <TableCell className="text-center font-mono">{c.submissions}</TableCell>
-                    <TableCell className="text-center">
-                      <span className={`font-mono font-bold ${c.avg >= 6 ? "text-emerald-400" : c.avg >= 4 ? "text-amber-400" : "text-red-400"}`}>{c.avg.toFixed(1)}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress value={c.approvalRate} className="h-2 w-24" />
-                        <span className="font-mono text-xs w-10">{c.approvalRate}%</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        </TabsContent>
 
-        {/* AVALIAÇÕES */}
-        <TabsContent value="avaliacoes">
-          <Card className="bg-card/50 border-border/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50 hover:bg-transparent">
-                  <TableHead>Avaliação</TableHead>
-                  <TableHead>Turma</TableHead>
-                  <TableHead className="text-center">Correções</TableHead>
-                  <TableHead className="text-center">Média</TableHead>
-                  <TableHead className="text-center">Maior</TableHead>
-                  <TableHead className="text-center">Menor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assessmentStats.map((a) => (
-                  <TableRow key={a.id} className="border-border/30">
-                    <TableCell className="font-medium">{a.title}</TableCell>
-                    <TableCell className="text-muted-foreground">{a.class_name}</TableCell>
-                    <TableCell className="text-center font-mono">{a.submissions}</TableCell>
-                    <TableCell className="text-center"><span className={`font-mono font-bold ${a.avg >= 6 ? "text-emerald-400" : "text-red-400"}`}>{a.avg.toFixed(1)}</span></TableCell>
-                    <TableCell className="text-center font-mono text-emerald-400">{a.max.toFixed(1)}</TableCell>
-                    <TableCell className="text-center font-mono text-red-400">{a.min.toFixed(1)}</TableCell>
+            {/* Question detail table */}
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50 hover:bg-transparent">
+                    <TableHead className="w-20">Questão</TableHead>
+                    <TableHead className="w-20">Gabarito</TableHead>
+                    <TableHead>% Acerto</TableHead>
+                    <TableHead className="text-center">A</TableHead>
+                    <TableHead className="text-center">B</TableHead>
+                    <TableHead className="text-center">C</TableHead>
+                    <TableHead className="text-center">D</TableHead>
+                    <TableHead className="text-center">E</TableHead>
+                    <TableHead className="text-center">Branco</TableHead>
+                    <TableHead>Dificuldade</TableHead>
                   </TableRow>
-                ))}
-                {assessmentStats.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhuma avaliação com correções.</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </Card>
-        </TabsContent>
-
-        {/* RANKING */}
-        <TabsContent value="ranking">
-          <Card className="bg-card/50 border-border/50 overflow-hidden">
-            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary" /> Top 10 Alunos</CardTitle></CardHeader>
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50 hover:bg-transparent">
-                  <TableHead className="w-16">#</TableHead>
-                  <TableHead>Aluno</TableHead>
-                  <TableHead>Turma</TableHead>
-                  <TableHead className="text-center">Avaliações</TableHead>
-                  <TableHead className="text-center">Média</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {topStudents.map((s, idx) => (
-                  <TableRow key={s.id} className="border-border/30">
-                    <TableCell className="font-mono text-muted-foreground">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}º`}</TableCell>
-                    <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{s.class_name}</TableCell>
-                    <TableCell className="text-center font-mono">{s.totalSubs}</TableCell>
-                    <TableCell className="text-center"><span className="font-mono font-bold text-lg text-emerald-400">{s.avg.toFixed(1)}</span></TableCell>
-                  </TableRow>
-                ))}
-                {topStudents.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum dado de desempenho disponível.</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </Card>
-        </TabsContent>
-
-        {/* INDICADORES DE RISCO */}
-        <TabsContent value="risco" className="space-y-6">
-          {riskStudents.length > 0 ? (
-            <>
-              <Card className="bg-red-500/5 border-red-500/20">
-                <CardContent className="p-4 flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-red-400">{riskStudents.length} aluno(s) com média abaixo de 5.0</p>
-                    <p className="text-xs text-muted-foreground mt-1">Estes alunos precisam de atenção especial. Considere reforço escolar ou acompanhamento pedagógico.</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-card/50 border-border/50 overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border/50 hover:bg-transparent">
-                      <TableHead>Aluno</TableHead>
-                      <TableHead>Turma</TableHead>
-                      <TableHead>Matrícula</TableHead>
-                      <TableHead className="text-center">Avaliações</TableHead>
-                      <TableHead className="text-center">Média</TableHead>
-                      <TableHead>Nível de Risco</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {riskStudents.sort((a, b) => a.avg - b.avg).map((s) => (
-                      <TableRow key={s.id} className="border-border/30">
-                        <TableCell className="font-medium">{s.name}</TableCell>
-                        <TableCell className="text-muted-foreground">{s.class_name}</TableCell>
-                        <TableCell className="text-muted-foreground font-mono text-xs">{s.registration || "—"}</TableCell>
-                        <TableCell className="text-center font-mono">{s.totalSubs}</TableCell>
-                        <TableCell className="text-center"><span className="font-mono font-bold text-red-400">{s.avg.toFixed(1)}</span></TableCell>
-                        <TableCell>
-                          <Badge className={s.avg < 3 ? "bg-red-500/15 text-red-400 border-red-500/30" : "bg-amber-500/15 text-amber-400 border-amber-500/30"}>
-                            {s.avg < 3 ? "Crítico" : "Atenção"}
-                          </Badge>
+                </TableHeader>
+                <TableBody>
+                  {questionAnalysis.map((q) => (
+                    <TableRow key={q.question} className="border-border/30">
+                      <TableCell className="font-mono font-medium">{q.question}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-primary/15 text-primary border-primary/30 font-mono">{q.expected}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress value={q.pct} className="h-2 w-20" />
+                          <span className="font-mono text-xs w-10">{q.pct}%</span>
+                        </div>
+                      </TableCell>
+                      {["A", "B", "C", "D", "E", "BRANCO"].map((opt) => (
+                        <TableCell key={opt} className="text-center">
+                          <span className={`font-mono text-xs ${opt === q.expected ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                            {q.optionCounts[opt] || 0}
+                          </span>
                         </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-            </>
-          ) : (
-            <Card className="bg-emerald-500/5 border-emerald-500/20">
-              <CardContent className="py-12 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-6 h-6 text-emerald-400" />
+                      ))}
+                      <TableCell>
+                        <Badge className={
+                          q.pct >= 70
+                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                            : q.pct >= 40
+                            ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                            : "bg-red-500/15 text-red-400 border-red-500/30"
+                        }>
+                          {q.pct >= 70 ? "Fácil" : q.pct >= 40 ? "Média" : "Difícil"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          {/* GABARITO */}
+          <TabsContent value="gabarito">
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Gabarito Oficial</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {Object.entries(answerKey).sort(([a], [b]) => parseInt(a) - parseInt(b)).map(([q, ans]) => (
+                    <div key={q} className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/30">
+                      <span className="font-mono text-sm text-muted-foreground w-8">{q}.</span>
+                      <Badge className="bg-primary/15 text-primary border-primary/30 font-mono text-base px-3">
+                        {ans as string}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-                <p className="font-medium text-emerald-400">Nenhum aluno em risco</p>
-                <p className="text-sm text-muted-foreground mt-1">{totalSubs > 0 ? "Todos os alunos estão com média acima de 5.0." : "Ainda não há correções para analisar."}</p>
               </CardContent>
             </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
