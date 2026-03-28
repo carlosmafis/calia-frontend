@@ -96,7 +96,7 @@ export default function Avaliacoes() {
           subject_id: form.subject_id,
           questions,
           bimestre: parseInt(form.bimestre),
-              }),
+        }),
       });
       toast.success("Avaliação criada com sucesso");
       setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1" });
