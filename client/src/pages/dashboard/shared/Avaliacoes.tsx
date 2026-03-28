@@ -24,7 +24,7 @@ import { Plus, FileText, Loader2, Calendar, MoreHorizontal, Eye, Trash2, Edit2 }
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
-const OPTIONS = ["A", "B", "C", "D", "E"];
+const OPTIONS = ["A", "B", "C", "D", "E", "ANULAR"];
 
 export default function Avaliacoes() {
   const { user } = useAuth();
@@ -241,7 +241,7 @@ export default function Avaliacoes() {
                       {Array.from({ length: totalQ }, (_, i) => i + 1).map((num) => (
                         <div key={num} className="flex items-center gap-2">
                           <span className="w-7 text-xs font-mono text-muted-foreground text-right">{num}.</span>
-                          <div className="flex gap-1">
+                          <div className="flex gap-0.5 flex-wrap">
                             {OPTIONS.map((opt) => (
                               <button
                                 key={opt} type="button"
@@ -392,7 +392,7 @@ export default function Avaliacoes() {
                 {Array.from({ length: parseInt(editForm.total_questions) || 10 }, (_, i) => i + 1).map((num) => (
                   <div key={num} className="flex items-center gap-2">
                     <span className="w-7 text-xs font-mono text-muted-foreground text-right">{num}.</span>
-                    <div className="flex gap-1">
+                    <div className="flex gap-0.5 flex-wrap">
                       {OPTIONS.map((opt) => (
                         <button
                           key={opt} type="button"
