@@ -514,6 +514,23 @@ export default function CorrecaoOCR() {
                                             const newAnswers = { ...editingAnswers };
                                             newAnswers[editingQuestion!] = option;
                                             setEditingAnswers(newAnswers);
+                                            
+                                            // Atualizar answersWithWeight com o tipo correto
+                                            const newWeights = { ...answersWithWeight };
+                                            if (option === "ANULAR") {
+                                              newWeights[editingQuestion!] = {
+                                                type: "ANULADA",
+                                                answer: null,
+                                                weight: 1
+                                              };
+                                            } else {
+                                              newWeights[editingQuestion!] = {
+                                                type: "MARCADA",
+                                                answer: option,
+                                                weight: 1
+                                              };
+                                            }
+                                            setAnswersWithWeight(newWeights);
                                             setEditingQuestion(null);
                                           }}
                                           className="h-12 text-lg font-semibold"
