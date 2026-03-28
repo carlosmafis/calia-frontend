@@ -32,7 +32,6 @@ export default function Avaliacoes() {
   const [assessments, setAssessments] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [professors, setProfessors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -58,16 +57,14 @@ export default function Avaliacoes() {
 
   const loadData = async () => {
     try {
-      const [a, c, s, p] = await Promise.all([
+      const [a, c, s] = await Promise.all([
         apiFetch("/assessments"),
         apiFetch("/classes"),
         apiFetch("/subjects"),
-        apiFetch("/users/professors"),
       ]);
       setAssessments(a || []);
       setClasses(c || []);
       setSubjects(s || []);
-      setProfessors(p || []);
     } catch {}
     setLoading(false);
   };
@@ -237,16 +234,7 @@ export default function Avaliacoes() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label></Label>
-                      <Select value="" disabled>
-                        <SelectTrigger className="bg-background/50"><SelectValue placeholder="Nenhum" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
-                          {professors.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+
                   </div>
                   <div className="space-y-2">
                     <Label>Gabarito</Label>
@@ -398,16 +386,7 @@ export default function Avaliacoes() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label></Label>
-                <Select value="" disabled>
-                  <SelectTrigger className="bg-background/50"><SelectValue placeholder="Nenhum" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
-                    {professors.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-              </div>
+
             </div>
             <div className="space-y-2">
               <Label>Gabarito</Label>
