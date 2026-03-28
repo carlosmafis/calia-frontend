@@ -46,7 +46,7 @@ export default function Avaliacoes() {
     subject_id: "",
     total_questions: "10",
     bimestre: "1",
-    applied_by: "",
+    titular_id: "",
   });
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export default function Avaliacoes() {
     title: "",
     total_questions: "10",
     bimestre: "1",
-    applied_by: "",
+    titular_id: "",
   });
   const [editAnswers, setEditAnswers] = useState<Record<number, string>>({});
 
@@ -98,11 +98,11 @@ export default function Avaliacoes() {
           subject_id: form.subject_id,
           questions,
           bimestre: parseInt(form.bimestre),
-          applied_by: form.applied_by || null,
+          titular_id: form.titular_id || null,
         }),
       });
       toast.success("Avaliação criada com sucesso");
-      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1", applied_by: "" });
+      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1", titular_id: "" });
       setAnswers({});
       setDialogOpen(false);
       loadData();
@@ -127,7 +127,7 @@ export default function Avaliacoes() {
 
   const startEdit = (assessment: any) => {
     setEditingId(assessment.id);
-    setEditForm({ title: assessment.title, total_questions: String(assessment.total_questions || 10), bimestre: String(assessment.bimestre || 1), applied_by: assessment.applied_by || "" });
+    setEditForm({ title: assessment.title, total_questions: String(assessment.total_questions || 10), bimestre: String(assessment.bimestre || 1), titular_id: assessment.titular_id || "" });
     setEditAnswers({});
   };
 
@@ -150,7 +150,7 @@ export default function Avaliacoes() {
           title: editForm.title,
           questions,
           bimestre: parseInt(editForm.bimestre),
-          applied_by: editForm.applied_by || null,
+          titular_id: editForm.titular_id || null,
         }),
       });
       toast.success("Avaliação atualizada com sucesso");
@@ -242,8 +242,8 @@ export default function Avaliacoes() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Professor Aplicador (Opcional)</Label>
-                      <Select value={form.applied_by} onValueChange={(v) => setForm({ ...form, applied_by: v })}>
+                      <Label>Professor Titular (Opcional)</Label>
+                      <Select value={form.titular_id} onValueChange={(v) => setForm({ ...form, titular_id: v })}>
                         <SelectTrigger className="bg-background/50"><SelectValue placeholder="Nenhum" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">Nenhum</SelectItem>
@@ -403,8 +403,8 @@ export default function Avaliacoes() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Professor Aplicador (Opcional)</Label>
-                <Select value={editForm.applied_by} onValueChange={(v) => setEditForm({ ...editForm, applied_by: v })}>
+                <Label>Professor Titular (Opcional)</Label>
+                <Select value={editForm.titular_id} onValueChange={(v) => setEditForm({ ...editForm, titular_id: v })}>
                   <SelectTrigger className="bg-background/50"><SelectValue placeholder="Nenhum" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Nenhum</SelectItem>
