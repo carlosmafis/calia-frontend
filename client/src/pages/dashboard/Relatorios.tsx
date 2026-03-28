@@ -1,326 +1,471 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Loader2, Download } from "lucide-react";
-import { toast } from "sonner";
-
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Loader2, BarChart3, AlertTriangle, Users, FileText } from "lucide-react";
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
 } from "recharts";
 
+const COLORS = ["#14B8A6", "#8B5CF6", "#D97706", "#EF4444", "#3B82F6", "#059669", "#EC4899"];
+
 export default function Relatorios() {
-  const [classes, setClasses] = useState<any[]>([]);
-  const [assessments, setAssessments] = useState<any[]>([]);
-  const [selectedClass, setSelectedClass] = useState("");
-  const [selectedAssessment, setSelectedAssessment] = useState("");
-  const [selectedBimestre, setSelectedBimestre] = useState("all");
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [reportData, setReportData] = useState<any>(null);
-  const reportRef = useRef<HTMLDivElement>(null);
+  const [assessments, setAssessments] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
+  const [selectedAssessment, setSelectedAssessment] = useState("");
+  const [assessment, setAssessment] = useState<any>(null);
+  const [submissions, setSubmissions] = useState<any[]>([]);
 
   useEffect(() => {
-    loadData();
+    const load = async () => {
+      try {
+        const [as_, stu] = await Promise.all([
+          apiFetch("/assessments").catch(() => []),
+          apiFetch("/students").catch(() => []),
+        ]);
+        setAssessments(as_ || []);
+        setStudents(stu || []);
+        
+        // Selecionar primeira avaliação por padrão
+        if ((as_ || []).length > 0) {
+          setSelectedAssessment((as_[0] as any).id);
+        }
+      } catch (err) {
+        // Erro ao carregar dados
+      }
+      setLoading(false);
+    };
+    load();
   }, []);
 
+  // Carregar dados da avaliação selecionada
   useEffect(() => {
-    if (selectedClass && selectedAssessment) {
-      generateReport();
-    }
-  }, [selectedClass, selectedAssessment, selectedBimestre]);
+    if (!selectedAssessment) return;
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const classesData = await apiFetch("/classes/").catch(() => []);
-      const assessmentsData = await apiFetch("/assessments/").catch(() => []);
-      
-      const classes = Array.isArray(classesData) ? classesData : [];
-      const assessments = Array.isArray(assessmentsData) ? assessmentsData : [];
-      
-      setClasses(classes);
-      setAssessments(assessments);
-      
-      if (classes.length > 0) setSelectedClass(classes[0].id);
-      if (assessments.length > 0) setSelectedAssessment(assessments[0].id);
-    } catch (err) {
-      // Erro ao carregar dados
-      toast.error("Erro ao carregar dados");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateReport = async () => {
-    if (!selectedClass || !selectedAssessment) return;
-    
-    try {
-      // Buscar submissões da avaliação
-      const results = await apiFetch(
-        `/assessments/${selectedAssessment}/submissions`
-      ).catch(() => []);
-      
-      // Filtrar por turma selecionada e bimestre
-      let studentResults = Array.isArray(results) 
-        ? results.filter((r: any) => r.class_id === selectedClass)
-        : [];
-      
-      // Filtrar por bimestre se selecionado
-      if (selectedBimestre !== "all") {
-        const bimNum = parseInt(selectedBimestre);
-        const assessmentData = assessments.find((a: any) => a.id === selectedAssessment);
-        if (assessmentData && assessmentData.bimestre === bimNum) {
-          // Manter os resultados se a avaliação é do bimestre selecionado
-        } else if (assessmentData && assessmentData.bimestre !== bimNum) {
-          studentResults = [];
-        }
+    const load = async () => {
+      try {
+        const [a, sub] = await Promise.all([
+          apiFetch(`/assessments/${selectedAssessment}`).catch(() => null),
+          apiFetch(`/assessments/${selectedAssessment}/submissions`).catch(() => []),
+        ]);
+        setAssessment(a);
+        setSubmissions(sub || []);
+      } catch (err) {
+        // Erro ao carregar dados da avaliação
       }
-      
-
-      
-      // Dados para gráficos
-      const studentAccuracy = studentResults
-        .filter((r: any) => r && r.student_name)
-        .map((r: any) => ({
-          name: r.student_name || "Aluno",
-          accuracy: Math.min(10, Math.max(0, r.score || 0)),
-        }))
-        .slice(0, 15);
-
-      // Calcular acertos por questão baseado nas respostas
-      const questionAccuracy = studentResults.length > 0
-        ? Array.from({ length: 10 }, (_, i) => {
-            const correctCount = studentResults.filter((r: any) => {
-              const answers = r.answers || {};
-              return answers[String(i + 1)] !== undefined;
-            }).length;
-            return {
-              question: `Q${i + 1}`,
-              accuracy: studentResults.length > 0 ? Math.round((correctCount / studentResults.length) * 100) : 0,
-            };
-          })
-        : Array.from({ length: 10 }, (_, i) => ({
-            question: `Q${i + 1}`,
-            accuracy: 0,
-          }));
-
-      // Tendência baseada em datas das submissões
-      const trendData = studentResults.length > 0
-        ? [
-            { date: "Submissões", accuracy: Math.round((studentResults.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / studentResults.length)) },
-          ]
-        : [
-            { date: "Sem dados", accuracy: 0 },
-          ];
-
-      const totalStudents = studentResults.length;
-      const averageAccuracy = studentResults.length > 0
-        ? Math.round((studentResults.reduce((sum: number, r: any) => sum + (r.score || 0), 0) / studentResults.length) * 10) / 10
-        : 0;
-
-      const approvalRate = studentResults.length > 0
-        ? Math.round((studentResults.filter((r: any) => (r.score || 0) >= 6).length / studentResults.length) * 100)
-        : 0;
-
-      setReportData({
-        studentAccuracy: studentAccuracy.length > 0 ? studentAccuracy : [{ name: "Sem dados", accuracy: 0 }],
-        questionAccuracy,
-        trendData,
-        totalStudents,
-        averageAccuracy,
-        approvalRate,
-      });
-    } catch (err) {
-      // Erro ao gerar relatório
-      toast.error("Erro ao gerar relatório");
-    }
-  };
-
-  // Função de exportar PDF removida (dependência não instalada)
-  // Implementar com biblioteca alternativa se necessário
+    };
+    load();
+  }, [selectedAssessment]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="flex justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
   }
 
+  // Parse answer_key
+  let answerKey: Record<string, string> = {};
+  try {
+    if (assessment && typeof assessment.answer_key === "string") {
+      answerKey = JSON.parse(assessment.answer_key);
+    } else if (assessment && assessment.answer_key) {
+      answerKey = assessment.answer_key;
+    }
+  } catch {}
+
+  // Compute scores
+  const scores = submissions.map((sub) => {
+    let answers: Record<string, string> = {};
+    try {
+      const answerField = sub.extracted_answers || sub.answers;
+      if (typeof answerField === "string") answers = JSON.parse(answerField);
+      else if (answerField) answers = answerField;
+    } catch {}
+
+    const student = students.find((s) => s.id === sub.student_id);
+    const totalQ = Object.keys(answerKey).length || assessment?.total_questions || 10;
+    let correct = 0;
+    let wrong = 0;
+    let blank = 0;
+
+    Object.entries(answerKey).forEach(([q, expected]) => {
+      const answer = answers[q] || "BRANCO";
+      const isCorrect = answer.toUpperCase() === (expected as string).toUpperCase();
+      if (answer === "BRANCO" || answer === "") blank++;
+      else if (isCorrect) correct++;
+      else wrong++;
+    });
+
+    const score = totalQ > 0 ? Math.round((correct / totalQ) * 100) / 10 : 0;
+
+    return {
+      student_id: sub.student_id,
+      student_name: student?.name || "Aluno desconhecido",
+      registration: student?.registration || "—",
+      correct,
+      wrong,
+      blank,
+      score: sub.score != null ? sub.score : score,
+      answers,
+    };
+  });
+
+  // Statistics
+  const allScores = scores.map((s) => s.score);
+  const avg = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
+  const sorted = [...allScores].sort((a, b) => a - b);
+  const median = sorted.length > 0
+    ? sorted.length % 2 === 0
+      ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+      : sorted[Math.floor(sorted.length / 2)]
+    : 0;
+  const stdDev = allScores.length > 0
+    ? Math.sqrt(allScores.reduce((sum, s) => sum + Math.pow(s - avg, 2), 0) / allScores.length)
+    : 0;
+  const maxScore = allScores.length > 0 ? Math.max(...allScores) : 0;
+  const minScore = allScores.length > 0 ? Math.min(...allScores) : 0;
+  const approvedCount = allScores.filter((s) => s >= 6).length;
+  const failedCount = allScores.filter((s) => s < 6).length;
+
+  // Distribution histogram
+  const distribution = [
+    { range: "0-2", count: allScores.filter((s) => s >= 0 && s < 2).length },
+    { range: "2-4", count: allScores.filter((s) => s >= 2 && s < 4).length },
+    { range: "4-6", count: allScores.filter((s) => s >= 4 && s < 6).length },
+    { range: "6-8", count: allScores.filter((s) => s >= 6 && s < 8).length },
+    { range: "8-10", count: allScores.filter((s) => s >= 8 && s <= 10).length },
+  ];
+
+  // Per-question analysis
+  const totalQ = Object.keys(answerKey).length || assessment?.total_questions || 10;
+  const questionAnalysis = Array.from({ length: totalQ }, (_, i) => {
+    const qNum = String(i + 1);
+    const expected = answerKey[qNum] || "?";
+    let correctCount = 0;
+    const optionCounts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0, BRANCO: 0 };
+
+    scores.forEach((s) => {
+      const ans = (s.answers && s.answers[qNum]) || "BRANCO";
+      if (ans.toUpperCase() === expected.toUpperCase()) correctCount++;
+      if (optionCounts[ans.toUpperCase()] !== undefined) optionCounts[ans.toUpperCase()]++;
+      else optionCounts["BRANCO"]++;
+    });
+
+    const pct = submissions.length > 0 ? Math.round((correctCount / submissions.length) * 100) : 0;
+    return { question: qNum, expected, correctCount, pct, optionCounts };
+  });
+
+  const hardQuestions = questionAnalysis.filter((q) => q.pct < 40);
+  const easyQuestions = questionAnalysis.filter((q) => q.pct > 80);
+
+  // Ranking
+  const ranking = [...scores].sort((a, b) => b.score - a.score);
+
+  // Approved vs Failed pie
+  const approvalData = [
+    { name: "Aprovados (≥6)", value: approvedCount },
+    { name: "Reprovados (<6)", value: failedCount },
+  ];
+
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Relatórios de Desempenho" 
-        description="Análise completa de desempenho das avaliações"
+    <div>
+      <PageHeader
+        title="Relatórios"
+        description="Análise detalhada de avaliações"
       />
 
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium">Turma</label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Avaliação</label>
-              <Select value={selectedAssessment} onValueChange={setSelectedAssessment}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {assessments.map((a: any) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Bimestre</label>
-              <Select value={selectedBimestre} onValueChange={setSelectedBimestre}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Anual (Todos)</SelectItem>
-                  <SelectItem value="1">1º Bimestre</SelectItem>
-                  <SelectItem value="2">2º Bimestre</SelectItem>
-                  <SelectItem value="3">3º Bimestre</SelectItem>
-                  <SelectItem value="4">4º Bimestre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-
+      {/* Seletor de Avaliações */}
+      <Card className="bg-card/50 border-border/50 mb-6">
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <Label>Selecione uma Avaliação</Label>
+            <Select value={selectedAssessment} onValueChange={setSelectedAssessment}>
+              <SelectTrigger className="bg-card/50">
+                <SelectValue placeholder="Escolha a avaliação..." />
+              </SelectTrigger>
+              <SelectContent>
+                {assessments.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* KPIs */}
-      {reportData && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Total de Alunos</p>
-                <p className="text-3xl font-bold text-blue-600">{reportData.totalStudents}</p>
-              </div>
-            </CardContent>
-          </Card>
+      {!assessment || submissions.length === 0 ? (
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="py-16 text-center">
+            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Nenhuma correção realizada ainda para esta avaliação.</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Use a Correção OCR ou Manual para corrigir as provas dos alunos.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="resumo" className="space-y-6">
+          <TabsList className="bg-card/50 border border-border/50">
+            <TabsTrigger value="resumo">Resumo</TabsTrigger>
+            <TabsTrigger value="ranking">Ranking</TabsTrigger>
+            <TabsTrigger value="questoes">Por Questão</TabsTrigger>
+            <TabsTrigger value="gabarito">Gabarito</TabsTrigger>
+          </TabsList>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Média Geral</p>
-                <p className="text-3xl font-bold text-green-600">{reportData.averageAccuracy.toFixed(1)}</p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* RESUMO */}
+          <TabsContent value="resumo" className="space-y-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Média</p>
+                  <p className="text-2xl font-bold font-mono text-primary">{avg.toFixed(1)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Mediana</p>
+                  <p className="text-2xl font-bold font-mono">{median.toFixed(1)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Desvio Padrão</p>
+                  <p className="text-2xl font-bold font-mono">{stdDev.toFixed(2)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Maior Nota</p>
+                  <p className="text-2xl font-bold font-mono text-emerald-400">{maxScore.toFixed(1)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-xs text-muted-foreground">Menor Nota</p>
+                  <p className="text-2xl font-bold font-mono text-red-400">{minScore.toFixed(1)}</p>
+                </CardContent>
+              </Card>
+            </div>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Taxa de Aprovação</p>
-                <p className="text-3xl font-bold text-purple-600">{reportData.approvalRate}%</p>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Distribution */}
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-primary" /> Distribuição de Notas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={distribution}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="range" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                      <Bar dataKey="count" name="Alunos" fill="#14B8A6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Excelência</p>
-                <p className="text-3xl font-bold text-orange-600">
-                  {reportData.totalStudents > 0 ? Math.round((reportData.studentAccuracy.filter((s: any) => s.accuracy >= 9).length / reportData.totalStudents) * 100) : 0}%
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              {/* Approval Pie */}
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" /> Taxa de Aprovação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie data={approvalData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={4} dataKey="value">
+                        <Cell fill="#059669" />
+                        <Cell fill="#EF4444" />
+                      </Pie>
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                      <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Alerts */}
+            {hardQuestions.length > 0 && (
+              <Card className="bg-red-500/5 border-red-500/20">
+                <CardContent className="p-4 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-400">Questões Difíceis (acerto &lt; 40%)</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Questões {hardQuestions.map((q) => q.question).join(", ")} tiveram baixo índice de acerto.
+                      Considere revisar o conteúdo com os alunos.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* RANKING */}
+          <TabsContent value="ranking">
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50 hover:bg-transparent">
+                    <TableHead className="w-16">#</TableHead>
+                    <TableHead>Aluno</TableHead>
+                    <TableHead>Matrícula</TableHead>
+                    <TableHead className="text-center">Acertos</TableHead>
+                    <TableHead className="text-center">Erros</TableHead>
+                    <TableHead className="text-center">Em Branco</TableHead>
+                    <TableHead className="text-center">Nota</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ranking.map((r, idx) => (
+                    <TableRow key={r.student_id} className="border-border/30">
+                      <TableCell className="font-mono text-muted-foreground">
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}º`}
+                      </TableCell>
+                      <TableCell className="font-medium">{r.student_name}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">{r.registration}</TableCell>
+                      <TableCell className="text-center font-mono text-emerald-400">{r.correct}</TableCell>
+                      <TableCell className="text-center font-mono text-red-400">{r.wrong}</TableCell>
+                      <TableCell className="text-center font-mono text-muted-foreground">{r.blank}</TableCell>
+                      <TableCell className="text-center">
+                        <span className={`font-mono font-bold text-lg ${r.score >= 6 ? "text-emerald-400" : "text-red-400"}`}>
+                          {typeof r.score === "number" ? r.score.toFixed(1) : r.score}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={r.score >= 6 ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-red-500/15 text-red-400 border-red-500/30"}>
+                          {r.score >= 6 ? "Aprovado" : "Reprovado"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          {/* POR QUESTÃO */}
+          <TabsContent value="questoes" className="space-y-6">
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Índice de Acerto por Questão</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={questionAnalysis}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="question" tick={{ fill: "#a1a1aa", fontSize: 11 }} label={{ value: "Questão", position: "insideBottom", offset: -5, fill: "#a1a1aa" }} />
+                    <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} domain={[0, 100]} unit="%" />
+                    <Tooltip
+                      contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
+                      formatter={(value: number) => [`${value}%`, "Acerto"]}
+                    />
+                    <Bar dataKey="pct" name="% Acerto" radius={[4, 4, 0, 0]}>
+                      {questionAnalysis.map((q, i) => (
+                        <Cell key={i} fill={q.pct >= 70 ? "#059669" : q.pct >= 40 ? "#D97706" : "#EF4444"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Question detail table */}
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50 hover:bg-transparent">
+                    <TableHead className="w-20">Questão</TableHead>
+                    <TableHead className="w-20">Gabarito</TableHead>
+                    <TableHead>% Acerto</TableHead>
+                    <TableHead className="text-center">A</TableHead>
+                    <TableHead className="text-center">B</TableHead>
+                    <TableHead className="text-center">C</TableHead>
+                    <TableHead className="text-center">D</TableHead>
+                    <TableHead className="text-center">E</TableHead>
+                    <TableHead className="text-center">Branco</TableHead>
+                    <TableHead>Dificuldade</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {questionAnalysis.map((q) => (
+                    <TableRow key={q.question} className="border-border/30">
+                      <TableCell className="font-mono font-medium">{q.question}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-primary/15 text-primary border-primary/30 font-mono">{q.expected}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress value={q.pct} className="h-2 w-20" />
+                          <span className="font-mono text-xs w-10">{q.pct}%</span>
+                        </div>
+                      </TableCell>
+                      {["A", "B", "C", "D", "E", "BRANCO"].map((opt) => (
+                        <TableCell key={opt} className="text-center">
+                          <span className={`font-mono text-xs ${opt === q.expected ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                            {q.optionCounts[opt] || 0}
+                          </span>
+                        </TableCell>
+                      ))}
+                      <TableCell>
+                        <Badge className={
+                          q.pct >= 70
+                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                            : q.pct >= 40
+                            ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                            : "bg-red-500/15 text-red-400 border-red-500/30"
+                        }>
+                          {q.pct >= 70 ? "Fácil" : q.pct >= 40 ? "Média" : "Difícil"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          {/* GABARITO */}
+          <TabsContent value="gabarito">
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Gabarito Oficial</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {Object.entries(answerKey).sort(([a], [b]) => parseInt(a) - parseInt(b)).map(([q, ans]) => (
+                    <div key={q} className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/30">
+                      <span className="font-mono text-sm text-muted-foreground w-8">{q}.</span>
+                      <Badge className="bg-primary/15 text-primary border-primary/30 font-mono text-base px-3">
+                        {ans as string}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       )}
-
-      {/* Gráficos */}
-      <div ref={reportRef} className="space-y-6 p-4 bg-white">
-        {reportData && (
-          <>
-            {/* Gráfico de Acertos por Estudante */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Acertos por Estudante</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={reportData.studentAccuracy}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="accuracy" fill="#3B82F6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Gráfico de Acertos por Questão */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Acertos por Questão</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={reportData.questionAccuracy}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="question" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="accuracy" fill="#10B981" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Gráfico de Tendência */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tendência de Desempenho</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={reportData.trendData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="accuracy" stroke="#8B5CF6" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </>
-        )}
-      </div>
     </div>
   );
 }
