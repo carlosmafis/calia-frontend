@@ -32,6 +32,7 @@ export default function Avaliacoes() {
   const [assessments, setAssessments] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [professors, setProfessors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -45,6 +46,7 @@ export default function Avaliacoes() {
     subject_id: "",
     total_questions: "10",
     bimestre: "1",
+    applied_by: "",
   });
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -52,19 +54,22 @@ export default function Avaliacoes() {
     title: "",
     total_questions: "10",
     bimestre: "1",
+    applied_by: "",
   });
   const [editAnswers, setEditAnswers] = useState<Record<number, string>>({});
 
   const loadData = async () => {
     try {
-      const [a, c, s] = await Promise.all([
+      const [a, c, s, p] = await Promise.all([
         apiFetch("/assessments"),
         apiFetch("/classes"),
         apiFetch("/subjects"),
+        apiFetch("/users/professors"),
       ]);
       setAssessments(a || []);
       setClasses(c || []);
       setSubjects(s || []);
+      setProfessors(p || []);
     } catch {}
     setLoading(false);
   };
@@ -93,10 +98,11 @@ export default function Avaliacoes() {
           subject_id: form.subject_id,
           questions,
           bimestre: parseInt(form.bimestre),
+          applied_by: form.applied_by || null,
         }),
       });
       toast.success("Avaliação criada com sucesso");
-      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1" });
+      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1", applied_by: "" });
       setAnswers({});
       setDialogOpen(false);
       loadData();
@@ -121,7 +127,7 @@ export default function Avaliacoes() {
 
   const startEdit = (assessment: any) => {
     setEditingId(assessment.id);
-    setEditForm({ title: assessment.title, total_questions: String(assessment.total_questions || 10), bimestre: String(assessment.bimestre || 1) });
+    setEditForm({ title: assessment.title, total_questions: String(assessment.total_questions || 10), bimestre: String(assessment.bimestre || 1), applied_by: assessment.applied_by || "" });
     setEditAnswers({});
   };
 
@@ -144,6 +150,7 @@ export default function Avaliacoes() {
           title: editForm.title,
           questions,
           bimestre: parseInt(editForm.bimestre),
+          applied_by: editForm.applied_by || null,
         }),
       });
       toast.success("Avaliação atualizada com sucesso");
@@ -231,6 +238,16 @@ export default function Avaliacoes() {
                           <SelectItem value="2">2º Bimestre</SelectItem>
                           <SelectItem value="3">3º Bimestre</SelectItem>
                           <SelectItem value="4">4º Bimestre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Professor Aplicador (Opcional)</Label>
+                      <Select value={form.applied_by} onValueChange={(v) => setForm({ ...form, applied_by: v })}>
+                        <SelectTrigger className="bg-background/50"><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhum</SelectItem>
+                          {professors.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -382,6 +399,16 @@ export default function Avaliacoes() {
                     <SelectItem value="2">2º Bimestre</SelectItem>
                     <SelectItem value="3">3º Bimestre</SelectItem>
                     <SelectItem value="4">4º Bimestre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Professor Aplicador (Opcional)</Label>
+                <Select value={editForm.applied_by} onValueChange={(v) => setEditForm({ ...editForm, applied_by: v })}>
+                  <SelectTrigger className="bg-background/50"><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhum</SelectItem>
+                    {professors.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
