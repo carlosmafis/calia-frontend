@@ -78,6 +78,10 @@ export default function Avaliacoes() {
   const totalQ = parseInt(form.total_questions) || 10;
 
   const createAssessment = async () => {
+    console.log("[DEBUG] createAssessment called");
+    console.log("[DEBUG] form:", form);
+    console.log("[DEBUG] answers:", answers);
+    
     if (!form.title || !form.class_id || !form.subject_id) {
       toast.error("Preencha título, turma e disciplina");
       return;
@@ -86,6 +90,7 @@ export default function Avaliacoes() {
       question_number: i + 1,
       correct_answer: answers[i + 1] || "A",
     }));
+    console.log("[DEBUG] questions:", questions);
 
     setCreating(true);
     try {
