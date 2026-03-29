@@ -148,6 +148,25 @@ export default function Avaliacoes() {
 
     setCreating(true);
     try {
+      // Buscar avaliação original para comparar
+      const originalAssessment = assessments.find(a => a.id === editingId);
+      const originalQuestions = originalAssessment?.questions || [];
+      
+      // Verificar se alguma questão foi anulada
+      for (let i = 1; i <= totalQ; i++) {
+        const newAnswer = editAnswers[i] || "A";
+        const oldAnswer = originalQuestions[i-1]?.correct_answer || "A";
+        
+        if (newAnswer === "ANULAR" && oldAnswer !== "ANULAR") {
+          // Questão foi anulada agora
+          console.log(`[DEBUG] Questão ${i} foi anulada`);
+          await apiFetch(`/assessments/${editingId}/annul-question`, {
+            method: "POST",
+            body: JSON.stringify({ question_number: i }),
+          });
+        }
+      }
+      
       await apiFetch(`/assessments/${editingId}`, {
         method: "PUT",
         body: JSON.stringify({
