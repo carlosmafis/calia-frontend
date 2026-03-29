@@ -46,7 +46,6 @@ export default function Avaliacoes() {
     subject_id: "",
     total_questions: "10",
     bimestre: "1",
-    shared_with: "",
   });
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -59,16 +58,14 @@ export default function Avaliacoes() {
 
   const loadData = async () => {
     try {
-      const [a, c, s, p] = await Promise.all([
+      const [a, c, s] = await Promise.all([
         apiFetch("/assessments"),
         apiFetch("/classes"),
         apiFetch("/subjects"),
-        apiFetch("/teachers/school/list"),
       ]);
       setAssessments(a || []);
       setClasses(c || []);
       setSubjects(s || []);
-      setProfessors(p || []);
     } catch {}
     setLoading(false);
   };
@@ -97,11 +94,10 @@ export default function Avaliacoes() {
           subject_id: form.subject_id,
           questions,
           bimestre: parseInt(form.bimestre),
-          shared_with: form.shared_with || null,
         }),
       });
       toast.success("Avaliação criada com sucesso");
-      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1", shared_with: "" });
+      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1" });
       setAnswers({});
       setDialogOpen(false);
       loadData();
@@ -239,16 +235,7 @@ export default function Avaliacoes() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Compartilhar com Professor (Opcional)</Label>
-                      <Select value={form.shared_with} onValueChange={(v) => setForm({ ...form, shared_with: v })}>
-                        <SelectTrigger className="bg-background/50"><SelectValue placeholder="Nenhum" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
-                          {professors.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+
                   </div>
                   <div className="space-y-2">
                     <Label>Gabarito</Label>
