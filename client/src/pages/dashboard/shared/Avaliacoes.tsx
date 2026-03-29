@@ -246,11 +246,11 @@ export default function Avaliacoes() {
                     </div>
                     <div className="space-y-2">
                       <Label>Compartilhar com Professor (Opcional)</Label>
-                      <Select value={form.shared_with} onValueChange={(v) => setForm({ ...form, shared_with: v })}>
+                      <Select value={form.shared_with || "none"} onValueChange={(v) => setForm({ ...form, shared_with: v === "none" ? "" : v })}>
                         <SelectTrigger className="bg-background/50"><SelectValue placeholder="Nenhum" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
-                          {professors.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
+                          <SelectItem value="none">Nenhum</SelectItem>
+                          {professors && professors.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
                         </SelectContent>
                       </Select>
                     </div>
