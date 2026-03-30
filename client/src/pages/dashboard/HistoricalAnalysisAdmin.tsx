@@ -32,7 +32,7 @@ export default function HistoricalAnalysisAdmin() {
   const [studentData, setStudentData] = useState<any>(null);
   
   const [loading, setLoading] = useState(false);
-  const [months, setMonths] = useState("6");
+  const [bimestre, setBimestre] = useState<string>(""); // "" = anual, "1", "2", "3", "4"
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -61,7 +61,8 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await apiFetch(`/historical/school/evolution?months=${months}`);
+        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const data = await apiFetch(`/historical/school/evolution${query}`);
         setSchoolData(data);
       } catch (error) {
         console.error(error);
@@ -70,14 +71,15 @@ export default function HistoricalAnalysisAdmin() {
       }
     };
     if (activeTab === "school") load();
-  }, [activeTab, months]);
+  }, [activeTab, bimestre]);
 
   // Carregar dados de turmas
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await apiFetch(`/historical/classes/comparison?months=${months}`);
+        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const data = await apiFetch(`/historical/classes/comparison${query}`);
         setClassesData(data);
       } catch (error) {
         console.error(error);
@@ -86,7 +88,7 @@ export default function HistoricalAnalysisAdmin() {
       }
     };
     if (activeTab === "classes") load();
-  }, [activeTab, months]);
+  }, [activeTab, bimestre]);
 
   // Carregar dados de turma específica
   useEffect(() => {
@@ -94,7 +96,8 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await apiFetch(`/historical/class/${selectedClassId}/evolution?months=${months}`);
+        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const data = await apiFetch(`/historical/class/${selectedClassId}/evolution${query}`);
         setClassData(data);
       } catch (error) {
         console.error(error);
@@ -103,7 +106,7 @@ export default function HistoricalAnalysisAdmin() {
       }
     };
     if (activeTab === "class") load();
-  }, [activeTab, selectedClassId, months]);
+  }, [activeTab, selectedClassId, bimestre]);
 
   // Carregar dados de professor
   useEffect(() => {
@@ -111,7 +114,8 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await apiFetch(`/historical/teacher/${selectedTeacherId}/evolution?months=${months}`);
+        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const data = await apiFetch(`/historical/teacher/${selectedTeacherId}/evolution${query}`);
         setTeacherData(data);
       } catch (error) {
         console.error(error);
@@ -120,7 +124,7 @@ export default function HistoricalAnalysisAdmin() {
       }
     };
     if (activeTab === "teacher") load();
-  }, [activeTab, selectedTeacherId, months]);
+  }, [activeTab, selectedTeacherId, bimestre]);
 
   // Carregar dados de aluno
   useEffect(() => {
@@ -128,7 +132,8 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await apiFetch(`/historical/student/${selectedStudentId}/evolution?months=${months}`);
+        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const data = await apiFetch(`/historical/student/${selectedStudentId}/evolution${query}`);
         setStudentData(data);
       } catch (error) {
         console.error(error);
@@ -137,7 +142,7 @@ export default function HistoricalAnalysisAdmin() {
       }
     };
     if (activeTab === "student") load();
-  }, [activeTab, selectedStudentId, months]);
+  }, [activeTab, selectedStudentId, bimestre]);
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
@@ -245,15 +250,17 @@ export default function HistoricalAnalysisAdmin() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Período (meses)</label>
-              <Select value={months} onValueChange={setMonths}>
+              <label className="text-sm font-medium mb-2 block">Bimestre</label>
+              <Select value={bimestre} onValueChange={setBimestre}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="3">Últimos 3 meses</SelectItem>
-                  <SelectItem value="6">Últimos 6 meses</SelectItem>
-                  <SelectItem value="12">Últimos 12 meses</SelectItem>
+                  <SelectItem value="">Anual (Todos os bimestres)</SelectItem>
+                  <SelectItem value="1">1º Bimestre</SelectItem>
+                  <SelectItem value="2">2º Bimestre</SelectItem>
+                  <SelectItem value="3">3º Bimestre</SelectItem>
+                  <SelectItem value="4">4º Bimestre</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -275,286 +282,267 @@ export default function HistoricalAnalysisAdmin() {
           <TabsTrigger value="student">Aluno</TabsTrigger>
         </TabsList>
 
-        {/* ESCOLA */}
-        <TabsContent value="school" className="space-y-6">
+        {/* Análise de Escola */}
+        <TabsContent value="school" className="space-y-4">
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : schoolData ? (
             <>
               {renderSummaryCards(schoolData)}
               
-              {schoolData.periods && (
-                <Card className="bg-background/50 border-border/50">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Evolução da Escola</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <LineChart data={schoolData.periods}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="period" stroke="rgba(255,255,255,0.5)" />
-                        <YAxis stroke="rgba(255,255,255,0.5)" />
-                        <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "8px" }} />
-                        <Legend />
-                        <Line type="monotone" dataKey="average" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6" }} name="Média" />
-                        <Line type="monotone" dataKey="approval_rate" stroke="#10b981" strokeWidth={2} dot={{ fill: "#10b981" }} name="Taxa Aprovação %" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              )}
+              {schoolData.periods && schoolData.periods.length > 0 && (
+                <>
+                  <Card className="bg-background/50 border-border/50">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Evolução de Desempenho</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={schoolData.periods}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                          <XAxis dataKey="period" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
+                          <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
+                          <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                          <Legend />
+                          <Line type="monotone" dataKey="average" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
 
-              {renderPeriodTable(schoolData.periods || [])}
+                  {renderPeriodTable(schoolData.periods)}
+                </>
+              )}
             </>
-          ) : null}
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Nenhum dado disponível</p>
+          )}
         </TabsContent>
 
-        {/* TURMAS */}
-        <TabsContent value="classes" className="space-y-6">
+        {/* Análise de Turmas */}
+        <TabsContent value="classes" className="space-y-4">
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : classesData && Array.isArray(classesData) ? (
+          ) : classesData && classesData.length > 0 ? (
             <>
               <Card className="bg-background/50 border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-lg">Ranking de Turmas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {classesData.map((cls: any, idx: number) => (
-                      <div key={cls.class_id} className="p-4 bg-background/50 rounded-lg border border-border/50">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-sm">
-                              #{idx + 1}
-                            </div>
-                            <div>
-                              <h4 className="font-medium">{cls.class_name}</h4>
-                              <p className="text-xs text-muted-foreground">{cls.monthly_averages?.length || 0} períodos</p>
-                            </div>
-                          </div>
-                          <Badge className={getTrendColor(cls.trend)}>
-                            {getTrendLabel(cls.trend)}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-4 text-sm mb-3">
-                          <div>
-                            <p className="text-muted-foreground">Média</p>
-                            <p className="text-2xl font-bold">{cls.average}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Aprovação</p>
-                            <p className="text-2xl font-bold text-emerald-400">{cls.approval_rate}%</p>
-                          </div>
-                        </div>
-                        {cls.monthly_averages && cls.monthly_averages.length > 0 && (
-                          <div className="h-12">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={cls.monthly_averages.map((v: number) => ({ value: v }))}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                <Bar dataKey="value" fill="#3b82f6" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-background/50 border-border/50">
-                <CardHeader>
-                  <CardTitle className="text-lg">Comparativo de Médias</CardTitle>
+                  <CardTitle className="text-lg">Comparação de Turmas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={classesData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis dataKey="class_name" stroke="rgba(255,255,255,0.5)" angle={-45} textAnchor="end" height={80} />
-                      <YAxis stroke="rgba(255,255,255,0.5)" />
-                      <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "8px" }} />
-                      <Bar dataKey="average" fill="#3b82f6" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="class_name" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
+                      <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                      <Legend />
+                      <Bar dataKey="average" fill="#14B8A6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
+
+              <Card className="bg-background/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">Detalhes das Turmas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border/50">
+                          <th className="text-left py-2 px-3 font-medium">Turma</th>
+                          <th className="text-center py-2 px-3 font-medium">Média</th>
+                          <th className="text-center py-2 px-3 font-medium">Aprovação %</th>
+                          <th className="text-center py-2 px-3 font-medium">✓ Aprovados</th>
+                          <th className="text-center py-2 px-3 font-medium">✗ Reprovados</th>
+                          <th className="text-center py-2 px-3 font-medium">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {classesData.map((cls: any, idx: number) => (
+                          <tr key={idx} className="border-b border-border/30 hover:bg-background/30">
+                            <td className="py-2 px-3">{cls.class_name}</td>
+                            <td className="text-center py-2 px-3 font-medium">{cls.average}</td>
+                            <td className="text-center py-2 px-3">{cls.approval_rate}%</td>
+                            <td className="text-center py-2 px-3 text-emerald-400">{cls.approved}</td>
+                            <td className="text-center py-2 px-3 text-red-400">{cls.failed}</td>
+                            <td className="text-center py-2 px-3">{cls.total_submissions}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
             </>
-          ) : null}
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Nenhum dado disponível</p>
+          )}
         </TabsContent>
 
-        {/* TURMA ESPECÍFICA */}
-        <TabsContent value="class" className="space-y-6">
+        {/* Análise de Turma Específica */}
+        <TabsContent value="class" className="space-y-4">
           <Card className="bg-background/50 border-border/50">
             <CardContent className="pt-6">
-              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma turma" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes && classes.length > 0 ? (
-                    classes.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.id}>
-                        {cls.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="" disabled>Nenhuma turma disponível</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Selecionar Turma</label>
+                <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : classData ? (
+          ) : classData && classData.periods && classData.periods.length > 0 ? (
             <>
               {renderSummaryCards(classData)}
               
-              {classData.periods && (
-                <Card className="bg-background/50 border-border/50">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Evolução da Turma</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <LineChart data={classData.periods}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="period" stroke="rgba(255,255,255,0.5)" />
-                        <YAxis stroke="rgba(255,255,255,0.5)" />
-                        <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "8px" }} />
-                        <Legend />
-                        <Line type="monotone" dataKey="average" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6" }} name="Média" />
-                        <Line type="monotone" dataKey="approval_rate" stroke="#10b981" strokeWidth={2} dot={{ fill: "#10b981" }} name="Taxa Aprovação %" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              )}
+              <Card className="bg-background/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">Evolução da Turma</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={classData.periods}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="period" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
+                      <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="average" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
 
-              {renderPeriodTable(classData.periods || [])}
+              {renderPeriodTable(classData.periods)}
             </>
-          ) : null}
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Nenhum dado disponível</p>
+          )}
         </TabsContent>
 
-        {/* PROFESSOR */}
-        <TabsContent value="teacher" className="space-y-6">
+        {/* Análise de Professor */}
+        <TabsContent value="teacher" className="space-y-4">
           <Card className="bg-background/50 border-border/50">
             <CardContent className="pt-6">
-              <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um professor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teachers && teachers.length > 0 ? (
-                    teachers.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.full_name || t.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="" disabled>Nenhum professor disponível</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Selecionar Professor</label>
+                <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teachers.map((teacher) => (
+                      <SelectItem key={teacher.id} value={teacher.id}>{teacher.full_name || teacher.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : teacherData ? (
+          ) : teacherData && teacherData.periods && teacherData.periods.length > 0 ? (
             <>
               {renderSummaryCards(teacherData)}
               
-              {teacherData.periods && (
-                <Card className="bg-background/50 border-border/50">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Desempenho do Professor</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <LineChart data={teacherData.periods}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="period" stroke="rgba(255,255,255,0.5)" />
-                        <YAxis stroke="rgba(255,255,255,0.5)" />
-                        <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "8px" }} />
-                        <Legend />
-                        <Line type="monotone" dataKey="average" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6" }} name="Média" />
-                        <Line type="monotone" dataKey="approval_rate" stroke="#10b981" strokeWidth={2} dot={{ fill: "#10b981" }} name="Taxa Aprovação %" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              )}
+              <Card className="bg-background/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">Evolução do Professor</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={teacherData.periods}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="period" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
+                      <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="average" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
 
-              {renderPeriodTable(teacherData.periods || [])}
+              {renderPeriodTable(teacherData.periods)}
             </>
-          ) : null}
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Nenhum dado disponível</p>
+          )}
         </TabsContent>
 
-        {/* ALUNO */}
-        <TabsContent value="student" className="space-y-6">
+        {/* Análise de Aluno */}
+        <TabsContent value="student" className="space-y-4">
           <Card className="bg-background/50 border-border/50">
             <CardContent className="pt-6">
-              <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um aluno" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students && students.length > 0 ? (
-                    students.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="" disabled>Nenhum aluno disponível</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Selecionar Aluno</label>
+                <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map((student) => (
+                      <SelectItem key={student.id} value={student.id}>{student.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : studentData ? (
+          ) : studentData && studentData.periods && studentData.periods.length > 0 ? (
             <>
               {renderSummaryCards(studentData)}
               
-              {studentData.periods && (
-                <Card className="bg-background/50 border-border/50">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Progresso do Aluno</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <LineChart data={studentData.periods}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="period" stroke="rgba(255,255,255,0.5)" />
-                        <YAxis stroke="rgba(255,255,255,0.5)" domain={[0, 10]} />
-                        <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "8px" }} />
-                        <Legend />
-                        <Line type="monotone" dataKey="average" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6" }} name="Nota" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              )}
+              <Card className="bg-background/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">Evolução do Aluno</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={studentData.periods}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="period" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
+                      <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="average" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
 
-              {renderPeriodTable(studentData.periods || [])}
+              {renderPeriodTable(studentData.periods)}
             </>
-          ) : null}
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Nenhum dado disponível</p>
+          )}
         </TabsContent>
       </Tabs>
     </div>
