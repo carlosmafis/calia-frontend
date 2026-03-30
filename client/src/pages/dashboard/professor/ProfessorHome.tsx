@@ -142,7 +142,7 @@ export default function ProfessorHome() {
                     <FileText className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">{a.title}</p>
-                      <p className="text-xs text-muted-foreground">{a.number_of_questions || 0} questões</p>
+                      <p className="text-xs text-muted-foreground">{a.questions?.length || 0} questões</p>
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground">{a.created_at ? new Date(a.created_at).toLocaleDateString("pt-BR") : ""}</span>
