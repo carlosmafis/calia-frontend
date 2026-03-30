@@ -43,11 +43,13 @@ export default function AdminHome() {
         setTeachers(t || []);
         setSubjects(sub || []);
 
-        // Try to get dashboard stats
+        // Try to get dashboard stats from historical/school/overview
         try {
-          const st = await apiFetch("/dashboard/stats");
+          const st = await apiFetch("/historical/school/overview");
           setStats(st);
-        } catch {}
+        } catch (e) {
+          console.error("Erro ao buscar overview:", e);
+        }
       } catch {}
       setLoading(false);
     };

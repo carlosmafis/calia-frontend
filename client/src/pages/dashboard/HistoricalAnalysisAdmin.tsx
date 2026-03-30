@@ -39,9 +39,9 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         const [c, t, s] = await Promise.all([
-          apiFetch("/admin/classes").catch(() => []),
-          apiFetch("/admin/teachers").catch(() => []),
-          apiFetch("/admin/students").catch(() => []),
+          apiFetch("/classes").catch(() => []),
+          apiFetch("/teachers").catch(() => []),
+          apiFetch("/students").catch(() => []),
         ]);
         setClasses(c || []);
         setTeachers(t || []);
@@ -94,7 +94,7 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await apiFetch(`/historical/class/${selectedClassId}/comparison?months=${months}`);
+        const data = await apiFetch(`/historical/class/${selectedClassId}/evolution?months=${months}`);
         setClassData(data);
       } catch (error) {
         console.error(error);
@@ -111,7 +111,7 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await apiFetch(`/historical/teacher/${selectedTeacherId}/comparison?months=${months}`);
+        const data = await apiFetch(`/historical/teacher/${selectedTeacherId}/evolution?months=${months}`);
         setTeacherData(data);
       } catch (error) {
         console.error(error);
@@ -128,7 +128,7 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await apiFetch(`/historical/student/${selectedStudentId}/comparison?months=${months}`);
+        const data = await apiFetch(`/historical/student/${selectedStudentId}/evolution?months=${months}`);
         setStudentData(data);
       } catch (error) {
         console.error(error);
