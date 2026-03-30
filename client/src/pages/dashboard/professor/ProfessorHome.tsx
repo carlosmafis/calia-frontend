@@ -14,6 +14,7 @@ export default function ProfessorHome() {
   const [classes, setClasses] = useState<any[]>([]);
   const [assessments, setAssessments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
+  const [corrections, setCorrections] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,9 +36,15 @@ export default function ProfessorHome() {
           } catch {}
         }
         setStudents(allStudents);
+
+        // Load number of corrections
+        try {
+          const corr = await apiFetch("/ocr/submissions").catch(() => []);
+          setCorrections((corr || []).length);
+        } catch {}
       } catch {}
       setLoading(false);
-    };
+    }
     load();
   }, []);
 
@@ -69,7 +76,7 @@ export default function ProfessorHome() {
         <StatCard title="Minhas Turmas" value={classes.length} icon={BookOpen} />
         <StatCard title="Meus Alunos" value={totalStudents} icon={Users} />
         <StatCard title="Avaliações" value={assessments.length} icon={FileText} />
-        <StatCard title="Correções" value="—" icon={ScanLine} description="OCR + Manual" />
+        <StatCard title="Correções" value={corrections} icon={ScanLine} description="OCR + Manual" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-4">
@@ -135,7 +142,7 @@ export default function ProfessorHome() {
                     <FileText className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">{a.title}</p>
-                      <p className="text-xs text-muted-foreground">{a.questions?.length || 0} questões</p>
+                      <p className="text-xs text-muted-foreground">{a.number_of_questions || 0} questões</p>
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground">{a.created_at ? new Date(a.created_at).toLocaleDateString("pt-BR") : ""}</span>
