@@ -142,29 +142,62 @@ export default function CorrecaoManual() {
           </CardHeader>
           <CardContent>
             {selectedAssessment ? (
-              <div className="grid sm:grid-cols-2 gap-3">
-                {Array.from({ length: totalQuestions }, (_, i) => i + 1).map((num) => (
-                  <div key={num} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/30 transition-colors">
-                    <span className="w-8 text-sm font-mono text-muted-foreground text-right">{num}.</span>
-                    <div className="flex gap-1.5">
-                      {OPTIONS.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => handleAnswer(num, opt)}
-                          className={`
-                            w-9 h-9 rounded-lg text-sm font-mono font-medium transition-all duration-150
-                            ${answers[String(num)] === opt
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "bg-background/50 text-muted-foreground hover:bg-accent hover:text-foreground border border-border/50"
-                            }
-                          `}
-                        >
-                          {opt}
-                        </button>
-                      ))}
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Coluna 1: Questões 1-5 */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-4">Questões 1 a 5</h3>
+                  {Array.from({ length: Math.min(5, totalQuestions) }, (_, i) => i + 1).map((num) => (
+                    <div key={num} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/30 transition-colors">
+                      <span className="w-8 text-sm font-mono text-muted-foreground text-right">{num}.</span>
+                      <div className="flex gap-1.5">
+                        {OPTIONS.map((opt) => (
+                          <button
+                            key={opt}
+                            onClick={() => handleAnswer(num, opt)}
+                            className={`
+                              w-9 h-9 rounded-lg text-sm font-mono font-medium transition-all duration-150
+                              ${answers[String(num)] === opt
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "bg-background/50 text-muted-foreground hover:bg-accent hover:text-foreground border border-border/50"
+                              }
+                            `}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Coluna 2: Questões 6-10 */}
+                {totalQuestions > 5 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-4">Questões 6 a {totalQuestions}</h3>
+                    {Array.from({ length: totalQuestions - 5 }, (_, i) => i + 6).map((num) => (
+                      <div key={num} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/30 transition-colors">
+                        <span className="w-8 text-sm font-mono text-muted-foreground text-right">{num}.</span>
+                        <div className="flex gap-1.5">
+                          {OPTIONS.map((opt) => (
+                            <button
+                              key={opt}
+                              onClick={() => handleAnswer(num, opt)}
+                              className={`
+                                w-9 h-9 rounded-lg text-sm font-mono font-medium transition-all duration-150
+                                ${answers[String(num)] === opt
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "bg-background/50 text-muted-foreground hover:bg-accent hover:text-foreground border border-border/50"
+                                }
+                              `}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             ) : (
               <div className="py-16 text-center">
