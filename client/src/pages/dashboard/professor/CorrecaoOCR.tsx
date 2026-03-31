@@ -184,7 +184,7 @@ export default function CorrecaoOCR() {
         : Object.values(data.answers || {});
       setEditingAnswers(
         Object.fromEntries(
-          answersArray.map((a: any, i: number) => [i, a])
+          answersArray.map((a: any, i: number) => [String(i + 1), a])
         )
       );
     } catch (err: any) {
@@ -198,12 +198,19 @@ export default function CorrecaoOCR() {
     if (!result || !uploadingStudent) return;
     setConfirming(true);
     try {
+      const normalizedAnswers = Object.fromEntries(
+        Object.entries(editingAnswers).map(([k, v]) => {
+          const n = Number(k);
+          return [String(n === 0 ? n + 1 : n), v];
+        })
+      );
+      
       await apiFetch("/ocr/confirm", {
         method: "POST",
         body: JSON.stringify({
           assessment_id: selectedAssessment,
           student_id: uploadingStudent,
-          answers: editingAnswers,
+          answers: normalizedAnswers, // ✅ BLINDADO
           answers_with_weight: answersWithWeight,
         }),
       });
