@@ -88,37 +88,54 @@ export default function Avaliacoes() {
     }
     const questions = Array.from({ length: Number(form.total_questions) }, (_, i) => ({
       question_number: i + 1,
-      correct_answer: answers[i + 1],
-      weight: 1, // 🔥 ESSENCIAL
+      correct_answer: (answers[i + 1] || "").toUpperCase(), // 🔥 garante formato
+      weight: 1,
     }));
+    
     console.log("[DEBUG] questions:", questions);
-
+    
     setCreating(true);
     try {
+      const body: any = {
+        title: form.title,
+        class_id: form.class_id,
+        subject_id: form.subject_id,
+        total_questions: Number(form.total_questions),
+        bimestre: Number(form.bimestre),
+        questions,
+      };
+    
+      // 🔥 só envia se existir
+      if (form.shared_with) {
+        body.shared_with = form.shared_with;
+      }
+    
       await apiFetch("/assessments/create-full", {
         method: "POST",
-        body: JSON.stringify({
-          title: form.title,
-          class_id: form.class_id,
-          subject_id: form.subject_id,
-          total_questions: Number(form.total_questions),
-          bimestre: Number(form.bimestre),
-          questions,
-          answer_key: answers,
-          shared_with: form.shared_with || null,
-        }),
+        body: JSON.stringify(body),
       });
+    
       toast.success("Avaliação criada com sucesso");
-      setForm({ title: "", class_id: "", subject_id: "", total_questions: "10", bimestre: "1", shared_with: "" });
+    
+      setForm({
+        title: "",
+        class_id: "",
+        subject_id: "",
+        total_questions: "10",
+        bimestre: "1",
+        shared_with: ""
+      });
+    
       setAnswers({});
       setDialogOpen(false);
       loadData();
+    
     } catch (err: any) {
+      console.error("ERRO COMPLETO:", err); // 🔥 ajuda MUITO
       toast.error(err.message || "Erro ao criar avaliação");
     } finally {
       setCreating(false);
     }
-  };
 
   const deleteAssessment = async () => {
     if (!deleteTarget) return;
