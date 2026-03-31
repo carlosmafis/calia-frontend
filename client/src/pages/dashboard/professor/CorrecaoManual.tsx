@@ -106,7 +106,7 @@ export default function CorrecaoManual() {
 
             <div className="space-y-2">
               <Label>Aluno</Label>
-              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+              <Select value={selectedStudent} onValueChange={(v) => { setSelectedStudent(v); setAnswers({}); setResult(null); }}>
                 <SelectTrigger className="bg-background/50">
                   <SelectValue placeholder="Selecione o aluno" />
                 </SelectTrigger>
