@@ -100,9 +100,9 @@ export default function Avaliacoes() {
           title: form.title,
           class_id: form.class_id,
           subject_id: form.subject_id,
-          total_questions: parseInt(form.total_questions),
+          total_questions: Number(form.total_questions),
+          bimestre: Number(form.bimestre) : null,
           questions,
-          bimestre: parseInt(form.bimestre),
           shared_with: form.shared_with || null,
         }),
       });
