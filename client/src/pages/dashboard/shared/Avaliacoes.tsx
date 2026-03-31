@@ -100,6 +100,7 @@ export default function Avaliacoes() {
           title: form.title,
           class_id: form.class_id,
           subject_id: form.subject_id,
+          total_questions: parseInt(form.total_questions),
           questions,
           bimestre: parseInt(form.bimestre),
           shared_with: form.shared_with || null,
