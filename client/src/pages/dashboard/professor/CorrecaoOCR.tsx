@@ -480,16 +480,19 @@ export default function CorrecaoOCR() {
                               <div className="space-y-2">
                                 <Label className="text-base">Respostas Detectadas</Label>
                                 <div className="grid grid-cols-5 gap-2">
-                                  {(Array.isArray(result.answers) ? result.answers : Object.values(result.answers || {})).map((answer: string, i: number) => (
+                                  {(Array.isArray(result.answers) ? result.answers : Object.values(result.answers || {})).map((answer: string, i: number) => {
+                                    const questionNum = String(i + 1);
+                                    return (
                                     <Button
                                       key={i}
-                                      variant={editingAnswers[i] ? "default" : "outline"}
+                                      variant={editingAnswers[questionNum] ? "default" : "outline"}
                                       onClick={() => setEditingQuestion(i)}
                                       className="h-12 text-lg font-semibold"
                                     >
-                                      Q{i + 1}: {editingAnswers[i] || answer || "—"}
+                                      Q{i + 1}: {editingAnswers[questionNum] || answer || "—"}
                                     </Button>
-                                  ))}
+                                  );
+                                  })}
                                 </div>
                               </div>
 
@@ -506,25 +509,27 @@ export default function CorrecaoOCR() {
                                       Resposta detectada: <strong>{editingQuestion !== null && (Array.isArray(result.answers) ? result.answers[editingQuestion] : Object.values(result.answers || {})[editingQuestion])}</strong>
                                     </p>
                                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                                      {OPTIONS.map((option) => (
+                                      {OPTIONS.map((option) => {
+                                        const questionNum = String(editingQuestion! + 1);
+                                        return (
                                         <Button
                                           key={option}
-                                          variant={editingAnswers[editingQuestion!] === option ? "default" : "outline"}
+                                          variant={editingAnswers[questionNum] === option ? "default" : "outline"}
                                           onClick={() => {
                                             const newAnswers = { ...editingAnswers };
-                                            newAnswers[editingQuestion!] = option;
+                                            newAnswers[questionNum] = option;
                                             setEditingAnswers(newAnswers);
                                             
                                             // Atualizar answersWithWeight com o tipo correto
                                             const newWeights = { ...answersWithWeight };
                                             if (option === "ANULAR") {
-                                              newWeights[editingQuestion!] = {
+                                              newWeights[questionNum] = {
                                                 type: "ANULADA",
                                                 answer: null,
                                                 weight: 1
                                               };
                                             } else {
-                                              newWeights[editingQuestion!] = {
+                                              newWeights[questionNum] = {
                                                 type: "MARCADA",
                                                 answer: option,
                                                 weight: 1
@@ -537,7 +542,8 @@ export default function CorrecaoOCR() {
                                         >
                                           {option}
                                         </Button>
-                                      ))}
+                                      );
+                                      })}
                                     </div>
                                   </div>
                                 </DialogContent>
