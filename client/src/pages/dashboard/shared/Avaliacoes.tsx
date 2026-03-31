@@ -135,6 +135,7 @@ export default function Avaliacoes() {
     } finally {
       setCreating(false);
     }
+  };
 
   const deleteAssessment = async () => {
     if (!deleteTarget) return;
