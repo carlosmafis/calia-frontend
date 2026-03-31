@@ -105,7 +105,6 @@ export default function Avaliacoes() {
         questions,
       };
     
-      // 🔥 só envia se existir
       if (form.shared_with) {
         body.shared_with = form.shared_with;
       }
