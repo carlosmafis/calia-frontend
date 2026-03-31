@@ -86,9 +86,10 @@ export default function Avaliacoes() {
       toast.error("Preencha título, turma e disciplina");
       return;
     }
-    const questions = Array.from({ length: totalQ }, (_, i) => ({
+    const questions = Array.from({ length: Number(form.total_questions) }, (_, i) => ({
       question_number: i + 1,
-      correct_answer: answers[i + 1] || "A",
+      correct_answer: answers[i + 1],
+      weight: 1, // 🔥 ESSENCIAL
     }));
     console.log("[DEBUG] questions:", questions);
 
