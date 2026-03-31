@@ -32,7 +32,7 @@ export default function HistoricalAnalysisAdmin() {
   const [studentData, setStudentData] = useState<any>(null);
   
   const [loading, setLoading] = useState(false);
-  const [bimestre, setBimestre] = useState<string>(""); // "" = anual, "1", "2", "3", "4"
+  const [bimestre, setBimestre] = useState<string>("all"); // "all" = anual, "1", "2", "3", "4"
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const query = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/school/evolution${query}`);
         setSchoolData(data || { periods: [], trend: "stable", improvement: 0 });
       } catch (error) {
@@ -79,7 +79,7 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const query = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/classes/comparison${query}`);
         setClassesData(data || []);
       } catch (error) {
@@ -98,7 +98,7 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const query = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/class/${selectedClassId}/evolution${query}`);
         setClassData(data || { periods: [], trend: "stable", improvement: 0 });
       } catch (error) {
@@ -117,7 +117,7 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const query = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/teacher/${selectedTeacherId}/evolution${query}`);
         setTeacherData(data || { periods: [], trend: "stable", improvement: 0 });
       } catch (error) {
@@ -136,7 +136,7 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         setLoading(true);
-        const query = bimestre ? `?bimestre=${bimestre}` : "";
+        const query = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/student/${selectedStudentId}/evolution${query}`);
         setStudentData(data || { periods: [], trend: "stable", improvement: 0 });
       } catch (error) {
@@ -261,7 +261,7 @@ export default function HistoricalAnalysisAdmin() {
                   <SelectValue placeholder="Selecione um bimestre..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Anual (Todos os bimestres)</SelectItem>
+                  <SelectItem value="all">Anual (Todos os bimestres)</SelectItem>
                   <SelectItem value="1">1º Bimestre</SelectItem>
                   <SelectItem value="2">2º Bimestre</SelectItem>
                   <SelectItem value="3">3º Bimestre</SelectItem>
