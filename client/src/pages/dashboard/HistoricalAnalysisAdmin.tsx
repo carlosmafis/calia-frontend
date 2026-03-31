@@ -63,9 +63,10 @@ export default function HistoricalAnalysisAdmin() {
         setLoading(true);
         const query = bimestre ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/school/evolution${query}`);
-        setSchoolData(data);
+        setSchoolData(data || { periods: [], trend: "stable", improvement: 0 });
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao carregar evolução da escola:", error);
+        setSchoolData({ periods: [], trend: "stable", improvement: 0 });
       } finally {
         setLoading(false);
       }
@@ -80,9 +81,10 @@ export default function HistoricalAnalysisAdmin() {
         setLoading(true);
         const query = bimestre ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/classes/comparison${query}`);
-        setClassesData(data);
+        setClassesData(data || []);
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao carregar comparação de turmas:", error);
+        setClassesData([]);
       } finally {
         setLoading(false);
       }
@@ -98,9 +100,10 @@ export default function HistoricalAnalysisAdmin() {
         setLoading(true);
         const query = bimestre ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/class/${selectedClassId}/evolution${query}`);
-        setClassData(data);
+        setClassData(data || { periods: [], trend: "stable", improvement: 0 });
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao carregar evolução da turma:", error);
+        setClassData({ periods: [], trend: "stable", improvement: 0 });
       } finally {
         setLoading(false);
       }
@@ -116,9 +119,10 @@ export default function HistoricalAnalysisAdmin() {
         setLoading(true);
         const query = bimestre ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/teacher/${selectedTeacherId}/evolution${query}`);
-        setTeacherData(data);
+        setTeacherData(data || { periods: [], trend: "stable", improvement: 0 });
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao carregar evolução do professor:", error);
+        setTeacherData({ periods: [], trend: "stable", improvement: 0 });
       } finally {
         setLoading(false);
       }
@@ -134,9 +138,10 @@ export default function HistoricalAnalysisAdmin() {
         setLoading(true);
         const query = bimestre ? `?bimestre=${bimestre}` : "";
         const data = await apiFetch(`/historical/student/${selectedStudentId}/evolution${query}`);
-        setStudentData(data);
+        setStudentData(data || { periods: [], trend: "stable", improvement: 0 });
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao carregar evolução do aluno:", error);
+        setStudentData({ periods: [], trend: "stable", improvement: 0 });
       } finally {
         setLoading(false);
       }
@@ -253,7 +258,7 @@ export default function HistoricalAnalysisAdmin() {
               <label className="text-sm font-medium mb-2 block">Bimestre</label>
               <Select value={bimestre} onValueChange={setBimestre}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione um bimestre..." />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Anual (Todos os bimestres)</SelectItem>
