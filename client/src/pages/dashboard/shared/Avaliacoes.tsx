@@ -101,8 +101,9 @@ export default function Avaliacoes() {
           class_id: form.class_id,
           subject_id: form.subject_id,
           total_questions: Number(form.total_questions),
-          bimestre: Number(form.bimestre), // 🔥 CORREÇÃO
+          bimestre: Number(form.bimestre),
           questions,
+          answer_key: answers,
           shared_with: form.shared_with || null,
         }),
       });
