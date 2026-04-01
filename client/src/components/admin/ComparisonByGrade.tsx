@@ -40,7 +40,7 @@ export default function ComparisonByGrade() {
 
   // Preparar dados para o gráfico
   const chartData = data.map((item) => ({
-    grade: item.grade,
+    grade: item.grade || "Sem série",
     "Média Geral": parseFloat(item.average.toFixed(2)),
     "Taxa Aprovação": parseFloat(item.approval_rate.toFixed(1)),
   }));
