@@ -10,6 +10,8 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HistoricalAnalysisAdmin from "../HistoricalAnalysisAdmin";
+import ComparisonBySubject from "@/components/admin/ComparisonBySubject";
+import ComparisonByGrade from "@/components/admin/ComparisonByGrade";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend
 } from "recharts";
@@ -96,6 +98,7 @@ export default function AdminHome() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-card/50 border border-border/50">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="comparatives">Comparativos</TabsTrigger>
           <TabsTrigger value="historical">Análise Histórica</TabsTrigger>
         </TabsList>
 
@@ -226,6 +229,11 @@ export default function AdminHome() {
         </Card>
       </div>
 
+        </TabsContent>
+
+        <TabsContent value="comparatives" className="space-y-4">
+          <ComparisonBySubject />
+          <ComparisonByGrade />
         </TabsContent>
 
         <TabsContent value="historical">
