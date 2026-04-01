@@ -19,13 +19,13 @@ interface SubjectComparison {
 export default function ComparisonBySubject() {
   const [data, setData] = useState<SubjectComparison[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bimestre, setBimestre] = useState<string>("");
+  const [bimestre, setBimestre] = useState<string>("all");
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const params = bimestre ? `?bimestre=${bimestre}` : "";
+        const params = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
         const result = await apiFetch(`/admin/dashboard/by-subject${params}`);
         setData(result || []);
       } catch (err) {
@@ -93,7 +93,7 @@ export default function ComparisonBySubject() {
               <SelectValue placeholder="Selecione um bimestre..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Anual</SelectItem>
+              <SelectItem value="all">Anual</SelectItem>
               <SelectItem value="1">1º Bimestre</SelectItem>
               <SelectItem value="2">2º Bimestre</SelectItem>
               <SelectItem value="3">3º Bimestre</SelectItem>

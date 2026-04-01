@@ -19,14 +19,14 @@ interface GradeComparison {
 export default function ComparisonByGrade() {
   const [data, setData] = useState<GradeComparison[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bimestre, setBimestre] = useState<string>("");
+  const [bimestre, setBimestre] = useState<string>("all");
   const [chartType, setChartType] = useState<"bar" | "line">("bar");
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const params = bimestre ? `?bimestre=${bimestre}` : "";
+        const params = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
         const result = await apiFetch(`/admin/dashboard/by-grade${params}`);
         setData(result || []);
       } catch (err) {
@@ -80,7 +80,7 @@ export default function ComparisonByGrade() {
                 <SelectValue placeholder="Selecione um bimestre..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Anual</SelectItem>
+                <SelectItem value="all">Anual</SelectItem>
                 <SelectItem value="1">1º Bimestre</SelectItem>
                 <SelectItem value="2">2º Bimestre</SelectItem>
                 <SelectItem value="3">3º Bimestre</SelectItem>
