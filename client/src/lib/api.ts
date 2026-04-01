@@ -5,7 +5,10 @@
 const API_BASE = import.meta.env.VITE_API_URL || "https://calia-backend.onrender.com";
 
 export function getToken(): string | null {
-  return localStorage.getItem("access_token");
+  return (
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("token") // fallback antigo
+  );
 }
 
 export function setToken(token: string) {
