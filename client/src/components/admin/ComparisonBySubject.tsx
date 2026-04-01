@@ -26,7 +26,7 @@ export default function ComparisonBySubject() {
       try {
         setLoading(true);
         const params = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
-        const result = await apiFetch(`/admin/dashboard/by-subject${params}`);
+        const result = await apiFetch(`/historical/school/by-subject${params}`);
         setData(result || []);
       } catch (err) {
         console.error("Erro ao carregar comparativo:", err);

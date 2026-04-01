@@ -27,7 +27,7 @@ export default function ComparisonByGrade() {
       try {
         setLoading(true);
         const params = bimestre !== "all" ? `?bimestre=${bimestre}` : "";
-        const result = await apiFetch(`/admin/dashboard/by-grade${params}`);
+        const result = await apiFetch(`/historical/school/by-grade${params}`);
         setData(result || []);
       } catch (err) {
         console.error("Erro ao carregar comparativo:", err);
