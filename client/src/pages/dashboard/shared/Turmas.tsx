@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge";
 import { Plus, BookOpen, Loader2, MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // 🔥 NOVO
 
 export default function Turmas() {
   const { user } = useAuth();
@@ -23,7 +24,15 @@ export default function Turmas() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: "", year: new Date().getFullYear().toString() });
+
+  // 🔥 ALTERADO
+  const [form, setForm] = useState({
+    name: "",
+    school_year: new Date().getFullYear().toString(),
+    level: "",
+    year: "",
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialog, setEditDialog] = useState(false);
   const [editForm, setEditForm] = useState<any>({ id: "", name: "", year: "" });
@@ -45,17 +54,46 @@ export default function Turmas() {
 
   useEffect(() => { loadData(); }, []);
 
+  // 🔥 ALTERADO
   const createClass = async () => {
-    if (!form.name) { toast.error("Nome da turma é obrigatório"); return; }
+    if (!form.name) {
+      toast.error("Nome da turma é obrigatório");
+      return;
+    }
+
+    if (!form.level || !form.year) {
+      toast.error("Selecione nível e série");
+      return;
+    }
+
     setCreating(true);
     try {
-      await apiFetch("/classes", { method: "POST", body: JSON.stringify({ name: form.name, year: parseInt(form.year) || new Date().getFullYear() }) });
+      await apiFetch("/classes", {
+        method: "POST",
+        body: JSON.stringify({
+          name: form.name,
+          school_year: parseInt(form.school_year),
+          level: form.level,
+          year: parseInt(form.year),
+        }),
+      });
+
       toast.success("Turma criada com sucesso");
-      setForm({ name: "", year: new Date().getFullYear().toString() });
+
+      setForm({
+        name: "",
+        school_year: new Date().getFullYear().toString(),
+        level: "",
+        year: "",
+      });
+
       setDialogOpen(false);
       loadData();
-    } catch (err: any) { toast.error(err.message || "Erro ao criar turma"); }
-    finally { setCreating(false); }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao criar turma");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const updateClass = async () => {
@@ -100,16 +138,64 @@ export default function Turmas() {
               </DialogTrigger>
               <DialogContent className="bg-card border-border">
                 <DialogHeader><DialogTitle>Criar Turma</DialogTitle></DialogHeader>
+
                 <div className="space-y-4 py-4">
+                  
                   <div className="space-y-2">
                     <Label>Nome da Turma</Label>
                     <Input placeholder="Ex: 9º Ano A" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-background/50" />
                   </div>
+
+                  {/* 🔥 NOVO */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nível</Label>
+                      <Select value={form.level} onValueChange={(v) => setForm({ ...form, level: v })}>
+                        <SelectTrigger className="bg-background/50">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fundamental">Fundamental</SelectItem>
+                          <SelectItem value="medio">Médio</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Série</Label>
+                      <Select value={form.year} onValueChange={(v) => setForm({ ...form, year: v })}>
+                        <SelectTrigger className="bg-background/50">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(form.level === "fundamental"
+                            ? [1,2,3,4,5,6,7,8,9]
+                            : [1,2,3]
+                          ).map((y) => (
+                            <SelectItem key={y} value={String(y)}>
+                              {form.level === "fundamental"
+                                ? `${y}º Ano`
+                                : `${y}º EM`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* 🔥 ALTERADO */}
                   <div className="space-y-2">
                     <Label>Ano Letivo</Label>
-                    <Input type="number" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} className="bg-background/50 w-32" />
+                    <Input
+                      type="number"
+                      value={form.school_year}
+                      onChange={(e) => setForm({ ...form, school_year: e.target.value })}
+                      className="bg-background/50 w-32"
+                    />
                   </div>
+
                 </div>
+
                 <DialogFooter>
                   <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
                   <Button onClick={createClass} disabled={creating} className="bg-primary text-primary-foreground">
@@ -137,7 +223,7 @@ export default function Turmas() {
             <TableHeader>
               <TableRow className="border-border/50 hover:bg-transparent">
                 <TableHead>Nome</TableHead>
-                <TableHead>Ano Letivo</TableHead>
+                <TableHead>Série</TableHead>
                 <TableHead className="text-center">Alunos</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
@@ -148,10 +234,20 @@ export default function Turmas() {
                 return (
                   <TableRow key={c.id} className="border-border/30">
                     <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono">{c.year_level ?? "—"}</TableCell>
+
+                    {/* 🔥 ALTERADO */}
+                    <TableCell className="text-muted-foreground font-mono">
+                      {c.year
+                        ? (c.level === "medio"
+                            ? `${c.year}º EM`
+                            : `${c.year}º Ano`)
+                        : "—"}
+                    </TableCell>
+
                     <TableCell className="text-center">
                       <Badge variant="secondary" className="gap-1"><Users className="w-3 h-3" /> {count}</Badge>
                     </TableCell>
+
                     <TableCell>
                       {canCreate && (
                         <DropdownMenu>
@@ -159,7 +255,7 @@ export default function Turmas() {
                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-card border-border">
-                            <DropdownMenuItem onClick={() => { setEditForm({ id: c.id, name: c.name, year: String(c.year_level || "") }); setEditDialog(true); }}>
+                            <DropdownMenuItem onClick={() => { setEditForm({ id: c.id, name: c.name, year: String(c.year || "") }); setEditDialog(true); }}>
                               <Pencil className="w-4 h-4 mr-2" /> Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDeleteTarget(c)} className="text-destructive">
@@ -176,37 +272,6 @@ export default function Turmas() {
           </Table>
         </Card>
       )}
-
-      <Dialog open={editDialog} onOpenChange={setEditDialog}>
-        <DialogContent className="bg-card border-border">
-          <DialogHeader><DialogTitle>Editar Turma</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Nome</Label>
-              <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="bg-background/50" />
-            </div>
-            <div className="space-y-2">
-              <Label>Ano Letivo</Label>
-              <Input type="number" value={editForm.year} onChange={(e) => setEditForm({ ...editForm, year: e.target.value })} className="bg-background/50 w-32" />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
-            <Button onClick={updateClass} disabled={saving} className="bg-primary text-primary-foreground">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Excluir Turma"
-        description={`Tem certeza que deseja excluir "${deleteTarget?.name}"? Os alunos vinculados ficarão sem turma.`}
-        onConfirm={deleteClass}
-        loading={deleting}
-      />
     </div>
   );
 }
