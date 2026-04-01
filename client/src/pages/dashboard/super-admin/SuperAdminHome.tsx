@@ -3,14 +3,17 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
-import { School, Users, GraduationCap, BarChart3, Loader2, Plus, Settings } from "lucide-react";
+import { School, Users, GraduationCap, BarChart3, Loader2, Plus, Settings, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { toast } from "sonner";
 
 export default function SuperAdminHome() {
   const [schools, setSchools] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [migrating, setMigrating] = useState(false);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -22,6 +25,27 @@ export default function SuperAdminHome() {
     };
     loadStats();
   }, []);
+
+  const handleMigrateStudents = async () => {
+    if (!window.confirm("Tem certeza que deseja migrar alunos antigos para users? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    setMigrating(true);
+    try {
+      const result = await apiFetch("/admin/migrate-students-to-users", {
+        method: "POST"
+      });
+      toast.success(`Migração concluída: ${result.success} sucesso, ${result.errors} erros`);
+      if (result.errors > 0) {
+        console.log("Erros:", result.errors_list);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao migrar alunos");
+    } finally {
+      setMigrating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,6 +122,14 @@ export default function SuperAdminHome() {
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><BarChart3 className="w-4 h-4 text-amber-400" /></div>
               <div><p className="text-sm font-medium">Relatórios Globais</p><p className="text-xs text-muted-foreground">Visão do sistema</p></div>
             </Link>
+            <Button
+              onClick={handleMigrateStudents}
+              disabled={migrating}
+              className="w-full flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {migrating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {migrating ? "Migrando..." : "Migrar Alunos Antigos"}
+            </Button>
           </CardContent>
         </Card>
       </div>
