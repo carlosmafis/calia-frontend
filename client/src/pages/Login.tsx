@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
-import { setToken } from "@/lib/api";
 import { toast } from "sonner";
+
+import { setToken, clearToken, getToken } from "@/lib/api";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/hero-landing-AejJu9SksdyRcUCfzjhiz2.webp";
 
@@ -19,18 +20,23 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://lhydfllckxuzo
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoeWRmbGxja3h1em90b25kbWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzOTYxNTQsImV4cCI6MjA4Nzk3MjE1NH0.PvwKkuSX8tJXHmoztSodHqMoFCsbJyslhDHnxeAGHjs";
 
 export default function Login() {
+  if (getToken()) {
+  window.location.replace("/dashboard");
+}
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+  
     if (!email || !password) {
       toast.error("Preencha todos os campos");
       return;
     }
-
+  
     setLoading(true);
+  
     try {
       const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: "POST",
@@ -40,15 +46,24 @@ export default function Login() {
         },
         body: JSON.stringify({ email, password }),
       });
-
+  
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error_description || data.msg || "Credenciais inválidas");
+  
+      if (!res.ok || !data?.access_token) {
+        throw new Error(
+          data?.error_description ||
+          data?.error ||
+          "Credenciais inválidas"
+        );
       }
-
+  
+      console.log("LOGIN OK - TOKEN:", data.access_token);
+  
+      clearToken();
       setToken(data.access_token);
-      window.location.href = "/dashboard";
+  
+      window.location.replace("/dashboard");
+  
     } catch (err: any) {
       toast.error(err.message || "Erro ao fazer login");
     } finally {
