@@ -11,8 +11,8 @@ import {
   ArrowRight, CheckCircle2
 } from "lucide-react";
 
-const CALIA_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/logo-calia_aeef9d89.png";
-const GABARITO_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/gabarito-padrao_e7bb2ac1.png";
+const CALIA_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/LOGOCALIA_cd390e4f.png";
+const GABARITO_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/SimuladodeProvaemFolhadeAtividadesVermelhoePretoIlustrado_b5af5f58.png";
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/hero-landing-AejJu9SksdyRcUCfzjhiz2.webp";
 const DASHBOARD_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/dashboard-preview-TmsZ6gXoFWfBirRJugdCpW.webp";
 const OCR_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/ocr-feature-QoBwTxMYwbPFbvFoJjiUgD.webp";

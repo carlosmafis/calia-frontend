@@ -85,7 +85,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 shrink-0">
         <img
-          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/logo-calia_aeef9d89.png"
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/LOGOCALIA_cd390e4f.png"
           alt="Cal.IA"
           className="w-8 h-8 object-contain"
         />
@@ -218,7 +218,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* Logo no Header (Mobile) */}
           <div className="lg:hidden flex items-center gap-2">
             <img
-              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/logo-calia_aeef9d89.png"
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/LOGOCALIA_cd390e4f.png"
               alt="Cal.IA"
               className="w-6 h-6 object-contain"
             />

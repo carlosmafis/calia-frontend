@@ -98,7 +98,7 @@ export default function Login() {
           <CardHeader className="text-center pb-2">
             <div className="flex justify-center mb-4">
               <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/logo-calia_aeef9d89.png"
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663377716985/mbGHqRvCcm8pC8pAncoxX9/LOGOCALIA_cd390e4f.png"
                 alt="Cal.IA"
                 className="w-16 h-16 object-contain"
               />
