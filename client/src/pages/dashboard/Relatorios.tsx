@@ -273,7 +273,7 @@ export default function Relatorios() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="range" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                       <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} allowDecimals={false} />
-                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
                       <Bar dataKey="count" name="Alunos" fill="#14B8A6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -294,7 +294,7 @@ export default function Relatorios() {
                         <Cell fill="#059669" />
                         <Cell fill="#EF4444" />
                       </Pie>
-                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
                       <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -376,7 +376,7 @@ export default function Relatorios() {
                     <XAxis dataKey="question" tick={{ fill: "#a1a1aa", fontSize: 11 }} label={{ value: "Questão", position: "insideBottom", offset: -5, fill: "#a1a1aa" }} />
                     <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} domain={[0, 100]} unit="%" />
                     <Tooltip
-                      contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }}
+                      contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }}
                       formatter={(value: number) => [`${value}%`, "Acerto"]}
                     />
                     <Bar dataKey="pct" name="% Acerto" radius={[4, 4, 0, 0]}>

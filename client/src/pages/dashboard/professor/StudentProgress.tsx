@@ -134,7 +134,7 @@ export default function StudentProgress({ id }: { id: string }) {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="index" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
               <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} domain={[0, 10]} />
-              <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
+              <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
               <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
               <Line 
                 type="monotone" 

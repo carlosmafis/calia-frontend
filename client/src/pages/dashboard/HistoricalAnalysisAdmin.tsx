@@ -309,7 +309,7 @@ export default function HistoricalAnalysisAdmin() {
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                           <XAxis dataKey="period" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
                           <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                          <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
+                          <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
                           <Legend />
                           <Line type="monotone" dataKey="average" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} />
                         </LineChart>
@@ -344,7 +344,7 @@ export default function HistoricalAnalysisAdmin() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="class_name" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
                       <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
                       <Legend />
                       <Bar dataKey="average" fill="#14B8A6" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -429,7 +429,7 @@ export default function HistoricalAnalysisAdmin() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="period" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
                       <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
                       <Legend />
                       <Line type="monotone" dataKey="average" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} />
                     </LineChart>
@@ -482,7 +482,7 @@ export default function HistoricalAnalysisAdmin() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="period" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
                       <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
                       <Legend />
                       <Line type="monotone" dataKey="average" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} />
                     </LineChart>
@@ -535,7 +535,7 @@ export default function HistoricalAnalysisAdmin() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="period" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
                       <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
+                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
                       <Legend />
                       <Line type="monotone" dataKey="average" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} />
                     </LineChart>

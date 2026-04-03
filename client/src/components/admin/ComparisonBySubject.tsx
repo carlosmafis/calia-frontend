@@ -116,9 +116,9 @@ export default function ComparisonBySubject() {
                   contentStyle={{
                     backgroundColor: "var(--color-background)",
                     border: "1px solid var(--color-border)",
-                    borderRadius: "8px",
-                    color: "var(--color-foreground)"
+                    borderRadius: "8px"
                   }}
+                  labelStyle={{ color: "#ffffff" }}
                   formatter={(value: number) => value.toFixed(2)}
                 />
                 <Bar dataKey="average" radius={[8, 8, 0, 0]} label={{ position: "top", fill: "#ffffff", fontSize: 11, formatter: (value: number) => value.toFixed(1) }}>
