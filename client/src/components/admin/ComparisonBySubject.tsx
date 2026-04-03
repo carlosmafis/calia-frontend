@@ -117,6 +117,7 @@ export default function ComparisonBySubject() {
                     backgroundColor: "var(--color-background)",
                     border: "1px solid var(--color-border)",
                     borderRadius: "8px",
+                    color: "var(--color-foreground)"
                   }}
                   formatter={(value: number) => value.toFixed(2)}
                 />

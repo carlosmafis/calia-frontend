@@ -117,7 +117,7 @@ export default function Desempenho() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 10 }} angle={-15} textAnchor="end" height={60} />
                 <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#e7e5e3" }} />
+                <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} labelStyle={{ color: "#e7e5e3" }} />
                 <Line type="monotone" dataKey="nota" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} name="Nota" />
                 <Line type="monotone" dataKey="media" stroke="#8B5CF6" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="Média Acumulada" />
               </LineChart>
@@ -153,7 +153,7 @@ export default function Desempenho() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 10 }} angle={-15} textAnchor="end" height={60} />
                   <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                  <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                  <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
                   <Bar dataKey="nota" fill="#14B8A6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

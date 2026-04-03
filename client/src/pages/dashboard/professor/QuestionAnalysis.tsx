@@ -163,7 +163,7 @@ export default function QuestionAnalysis() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="option" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                   <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} />
-                  <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                  <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
                   <Bar dataKey="count" name="Alunos" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
                       <Cell 
