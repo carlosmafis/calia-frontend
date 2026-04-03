@@ -6,6 +6,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 
+// Componente customizado para Tooltip com texto branco garantido
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        backgroundColor: "#1c1917",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        color: "#ffffff"
+      }}>
+        <p style={{ margin: 0, color: "#ffffff" }}>{`${payload[0].payload.subject}`}</p>
+        <p style={{ margin: "4px 0 0 0", color: "#ffffff" }}>{`Média: ${payload[0].value.toFixed(2)}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 interface SubjectComparison {
   subject: string;
   class: string;
@@ -112,15 +131,7 @@ export default function ComparisonBySubject() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="subject" angle={-45} textAnchor="end" height={100} />
                 <YAxis domain={[0, 10]} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--color-background)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "8px"
-                  }}
-                  labelStyle={{ color: "#ffffff" }}
-                  formatter={(value: number) => value.toFixed(2)}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="average" radius={[8, 8, 0, 0]} label={{ position: "top", fill: "#ffffff", fontSize: 11, formatter: (value: number) => value.toFixed(1) }}>
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getColor(entry.average)} />

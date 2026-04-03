@@ -12,6 +12,25 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
 
+// Componente customizado para Tooltip com texto branco garantido
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        backgroundColor: "#1c1917",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        color: "#ffffff"
+      }}>
+        <p style={{ margin: 0, color: "#ffffff" }}>{`${label || payload[0].payload?.name || ''}`}</p>
+        <p style={{ margin: "4px 0 0 0", color: "#ffffff" }}>{`${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function QuestionAnalysis() {
   const [, navigate] = useLocation();
   const [assessments, setAssessments] = useState<any[]>([]);
@@ -163,7 +182,7 @@ export default function QuestionAnalysis() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="option" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                   <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} />
-                  <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
+                  <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="count" name="Alunos" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
                       <Cell 

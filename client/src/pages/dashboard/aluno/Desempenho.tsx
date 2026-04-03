@@ -9,6 +9,25 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from "recharts";
 
+// Componente customizado para Tooltip com texto branco garantido
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        backgroundColor: "#1c1917",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        color: "#ffffff"
+      }}>
+        <p style={{ margin: 0, color: "#ffffff" }}>{`${label || payload[0].payload?.name || ''}`}</p>
+        <p style={{ margin: "4px 0 0 0", color: "#ffffff" }}>{`${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function Desempenho() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,7 +136,7 @@ export default function Desempenho() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 10 }} angle={-15} textAnchor="end" height={60} />
                 <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
+                <Tooltip content={<CustomTooltip />} />
                 <Line type="monotone" dataKey="nota" stroke="#14B8A6" strokeWidth={2} dot={{ fill: "#14B8A6", r: 4 }} name="Nota" />
                 <Line type="monotone" dataKey="media" stroke="#8B5CF6" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="Média Acumulada" />
               </LineChart>
@@ -153,7 +172,7 @@ export default function Desempenho() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 10 }} angle={-15} textAnchor="end" height={60} />
                   <YAxis tick={{ fill: "#a1a1aa", fontSize: 11 }} domain={[0, 10]} />
-                  <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
+                  <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="nota" fill="#14B8A6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

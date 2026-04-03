@@ -23,6 +23,25 @@ import {
 
 const COLORS = ["#14B8A6", "#D97706", "#059669", "#8B5CF6", "#EF4444", "#3B82F6"];
 
+// Componente customizado para Tooltip com texto branco garantido
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        backgroundColor: "#1c1917",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        color: "#ffffff"
+      }}>
+        <p style={{ margin: 0, color: "#ffffff" }}>{`${label || payload[0].payload?.name || ''}`}</p>
+        <p style={{ margin: "4px 0 0 0", color: "#ffffff" }}>{`${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function AvaliacaoDetalhes({ id }: { id: string }) {
   const [, navigate] = useLocation();
   const { user } = useAuth();
@@ -255,7 +274,7 @@ export default function AvaliacaoDetalhes({ id }: { id: string }) {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="range" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                       <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} allowDecimals={false} />
-                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
+                      <Tooltip content={<CustomTooltip />} />
                       <Bar dataKey="count" name="Alunos" fill="#14B8A6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -276,7 +295,7 @@ export default function AvaliacaoDetalhes({ id }: { id: string }) {
                         <Cell fill="#059669" />
                         <Cell fill="#EF4444" />
                       </Pie>
-                      <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
+                      <Tooltip content={<CustomTooltip />} />
                       <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
                     </PieChart>
                   </ResponsiveContainer>

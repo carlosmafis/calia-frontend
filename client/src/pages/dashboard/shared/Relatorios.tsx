@@ -17,7 +17,24 @@ import {
 
 const COLORS = ["#14B8A6", "#8B5CF6", "#D97706", "#EF4444", "#3B82F6", "#059669", "#EC4899"];
 
-
+// Componente customizado para Tooltip com texto branco garantido
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        backgroundColor: "#1c1917",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        color: "#ffffff"
+      }}>
+        <p style={{ margin: 0, color: "#ffffff" }}>{`${label}`}</p>
+        <p style={{ margin: "4px 0 0 0", color: "#ffffff" }}>{`${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function Relatorios() {
   const { user } = useAuth();

@@ -18,6 +18,25 @@ import { useLocation } from "wouter";
 
 const COLORS = ["#059669", "#EF4444"];
 
+// Componente customizado para Tooltip com texto branco garantido
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        backgroundColor: "#1c1917",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        color: "#ffffff"
+      }}>
+        <p style={{ margin: 0, color: "#ffffff" }}>{`${label || payload[0].payload?.name || ''}`}</p>
+        <p style={{ margin: "4px 0 0 0", color: "#ffffff" }}>{`${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function AdminDashboard() {
   const [, navigate] = useLocation();
   const [overview, setOverview] = useState<any>(null);
@@ -155,7 +174,7 @@ export default function AdminDashboard() {
                       <Cell fill="#059669" />
                       <Cell fill="#EF4444" />
                     </Pie>
-                    <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -172,7 +191,7 @@ export default function AdminDashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                     <XAxis dataKey="class_name" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
                     <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelStyle={{ color: "#ffffff" }} />
+                    <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="average" name="Média" fill="#14B8A6" radius={[4, 4, 0, 0]} label={{ position: "top", fill: "#ffffff", fontSize: 11, formatter: (value: number) => value.toFixed(1) }} />
                   </BarChart>
                 </ResponsiveContainer>
