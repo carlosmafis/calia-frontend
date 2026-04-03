@@ -21,10 +21,16 @@ const COLORS = ["#14B8A6", "#8B5CF6", "#D97706", "#EF4444", "#3B82F6", "#059669"
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#1c1917] border border-white/10 rounded-lg p-2 shadow-lg">
-        <p className="text-white text-sm font-medium">{label}</p>
+      <div style={{
+        backgroundColor: "#1c1917",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "8px",
+        padding: "8px",
+        boxShadow: "0 4px 6px rgba(0,0,0,0.3)"
+      }}>
+        <p style={{ color: "#ffffff", fontSize: "14px", fontWeight: "500", margin: "0 0 4px 0" }}>{label}</p>
         {payload.map((entry: any, index: number) => (
-          <p key={index} style={{ color: entry.color }} className="text-sm">
+          <p key={index} style={{ color: "#ffffff", fontSize: "13px", margin: "2px 0" }}>
             {entry.name}: {entry.value}
           </p>
         ))}
