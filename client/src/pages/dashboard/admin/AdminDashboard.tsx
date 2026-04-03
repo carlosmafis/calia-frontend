@@ -173,7 +173,7 @@ export default function AdminDashboard() {
                     <XAxis dataKey="class_name" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
                     <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                     <Tooltip contentStyle={{ background: "#1c1917", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#ffffff" }} />
-                    <Bar dataKey="average" name="Média" fill="#14B8A6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="average" name="Média" fill="#14B8A6" radius={[4, 4, 0, 0]} label={{ position: "top", fill: "#ffffff", fontSize: 11, formatter: (value: number) => value.toFixed(1) }} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>

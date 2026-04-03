@@ -276,7 +276,7 @@ export default function Relatorios() {
                       <XAxis dataKey="range" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                       <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} allowDecimals={false} />
                       <Tooltip contentStyle={{ backgroundColor: "var(--color-background)", border: "1px solid var(--color-border)", borderRadius: "8px", color: "var(--color-foreground)" }} />
-                      <Bar dataKey="count" name="Alunos" fill="#14B8A6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="count" name="Alunos" fill="#14B8A6" radius={[4, 4, 0, 0]} label={{ position: "top", fill: "#ffffff", fontSize: 11 }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -381,7 +381,7 @@ export default function Relatorios() {
                       contentStyle={{ backgroundColor: "var(--color-background)", border: "1px solid var(--color-border)", borderRadius: "8px", color: "var(--color-foreground)" }}
                       formatter={(value: number) => [`${value}%`, "Acerto"]}
                     />
-                    <Bar dataKey="pct" name="% Acerto" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="pct" name="% Acerto" radius={[4, 4, 0, 0]} label={{ position: "top", fill: "#ffffff", fontSize: 11 }}>
                       {questionAnalysis.map((q, i) => (
                         <Cell key={i} fill={q.pct >= 70 ? "#059669" : q.pct >= 40 ? "#D97706" : "#EF4444"} />
                       ))}

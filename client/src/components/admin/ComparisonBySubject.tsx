@@ -121,7 +121,7 @@ export default function ComparisonBySubject() {
                   }}
                   formatter={(value: number) => value.toFixed(2)}
                 />
-                <Bar dataKey="average" radius={[8, 8, 0, 0]}>
+                <Bar dataKey="average" radius={[8, 8, 0, 0]} label={{ position: "top", fill: "#ffffff", fontSize: 11, formatter: (value: number) => value.toFixed(1) }}>
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getColor(entry.average)} />
                   ))}
