@@ -35,14 +35,20 @@ export default function AlunoHome() {
   const { user } = useAuth();
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         // Try to get student submissions
-        const data = await apiFetch("/dashboard/student-results").catch(() => []);
+        const data = await apiFetch("/dashboard/student-results");
         setSubmissions(data || []);
-      } catch {}
+        setError(null);
+      } catch (err: any) {
+        console.error("Erro ao carregar submissões:", err);
+        setError(err.message || "Erro ao carregar dados");
+        setSubmissions([]);
+      }
       setLoading(false);
     };
     load();
@@ -65,6 +71,28 @@ export default function AlunoHome() {
     return (
       <div className="flex justify-center items-center py-32">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader
+          title="Meu Painel"
+          description="Acompanhe suas notas e desempenho"
+        />
+        <Card className="bg-red-950/20 border-red-500/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <XCircle className="w-5 h-5 text-red-500" />
+              <div>
+                <p className="font-semibold text-red-500">Erro ao carregar dados</p>
+                <p className="text-sm text-red-400 mt-1">{error}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
