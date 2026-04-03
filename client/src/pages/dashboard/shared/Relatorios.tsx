@@ -17,28 +17,7 @@ import {
 
 const COLORS = ["#14B8A6", "#8B5CF6", "#D97706", "#EF4444", "#3B82F6", "#059669", "#EC4899"];
 
-// Custom Tooltip Component
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div style={{
-        backgroundColor: "#1c1917",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: "8px",
-        padding: "8px",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.3)"
-      }}>
-        <p style={{ color: "#ffffff", fontSize: "14px", fontWeight: "500", margin: "0 0 4px 0" }}>{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <p key={index} style={{ color: "#ffffff", fontSize: "13px", margin: "2px 0" }}>
-            {entry.name}: {entry.value}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
+
 
 export default function Relatorios() {
   const { user } = useAuth();
@@ -296,7 +275,7 @@ export default function Relatorios() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="range" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                       <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} allowDecimals={false} />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--color-background)", border: "1px solid var(--color-border)", borderRadius: "8px" }} />
                       <Bar dataKey="count" name="Alunos" fill="#14B8A6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -317,7 +296,7 @@ export default function Relatorios() {
                         <Cell fill="#059669" />
                         <Cell fill="#EF4444" />
                       </Pie>
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--color-background)", border: "1px solid var(--color-border)", borderRadius: "8px" }} />
                       <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -399,7 +378,7 @@ export default function Relatorios() {
                     <XAxis dataKey="question" tick={{ fill: "#a1a1aa", fontSize: 11 }} label={{ value: "Questão", position: "insideBottom", offset: -5, fill: "#a1a1aa" }} />
                     <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} domain={[0, 100]} unit="%" />
                     <Tooltip
-                      content={<CustomTooltip />}
+                      contentStyle={{ backgroundColor: "var(--color-background)", border: "1px solid var(--color-border)", borderRadius: "8px" }}
                       formatter={(value: number) => [`${value}%`, "Acerto"]}
                     />
                     <Bar dataKey="pct" name="% Acerto" radius={[4, 4, 0, 0]}>
