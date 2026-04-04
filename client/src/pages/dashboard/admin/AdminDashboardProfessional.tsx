@@ -37,9 +37,9 @@ export default function AdminDashboardProfessional() {
     const load = async () => {
       try {
         const [c, s, a] = await Promise.all([
-          apiFetch("/classes").catch(() => []),
-          apiFetch("/students").catch(() => []),
-          apiFetch("/assessments").catch(() => []),
+          apiFetch("/classes/").catch(() => []),
+          apiFetch("/students/").catch(() => []),
+          apiFetch("/assessments/").catch(() => []),
         ]);
         setClasses(c || []);
         setStudents(s || []);
@@ -59,7 +59,7 @@ export default function AdminDashboardProfessional() {
     const calculateRisk = async () => {
       try {
         // Buscar submissões de alunos
-        const submissions = await apiFetch("/student-submissions").catch(() => []);
+        const submissions = await apiFetch("/student-submissions/").catch(() => []);
         
         // Agrupar por aluno e calcular média
         const studentScores: Record<string, any> = {};
@@ -116,8 +116,8 @@ export default function AdminDashboardProfessional() {
   useEffect(() => {
     const loadSubjects = async () => {
       try {
-        const subjects = await apiFetch("/subjects").catch(() => []);
-        const submissions = await apiFetch("/student-submissions").catch(() => []);
+        const subjects = await apiFetch("/subjects/").catch(() => []);
+        const submissions = await apiFetch("/student-submissions/").catch(() => []);
         
         const subjectData: Record<string, any> = {};
         subjects.forEach((sub: any) => {

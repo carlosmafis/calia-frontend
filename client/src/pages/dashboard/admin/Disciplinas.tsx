@@ -30,7 +30,7 @@ export default function Disciplinas() {
 
   const loadSubjects = async () => {
     try {
-      const data = await apiFetch("/subjects");
+      const data = await apiFetch("/subjects/");
       setSubjects(data || []);
     } catch {}
     setLoading(false);

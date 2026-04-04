@@ -50,7 +50,7 @@ export default function TeacherDashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const cls = await apiFetch("/classes").catch(() => []);
+        const cls = await apiFetch("/classes/").catch(() => []);
         setClasses(cls || []);
         if (cls && cls.length > 0) {
           setSelectedClass(cls[0].id);

@@ -42,7 +42,7 @@ export default function QuestionAnalysis() {
   useEffect(() => {
     const load = async () => {
       try {
-        const assessments = await apiFetch("/assessments").catch(() => []);
+        const assessments = await apiFetch("/assessments/").catch(() => []);
         setAssessments(assessments || []);
         if (assessments && assessments.length > 0) {
           setSelectedAssessment(assessments[0].id);

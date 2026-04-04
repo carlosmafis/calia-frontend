@@ -21,7 +21,7 @@ export default function UsuariosSuperAdmin() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await apiFetch("/users");
+        const data = await apiFetch("/users/");
         setUsers(data || []);
       } catch {}
       setLoading(false);

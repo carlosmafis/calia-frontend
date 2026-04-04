@@ -25,7 +25,7 @@ export default function AlertsPanel() {
       const data = await apiFetch("/alerts/?unread_only=true&limit=10").catch(() => ({ alerts: [] }));
       setAlerts(data?.alerts || []);
       
-      const count = await apiFetch("/alerts/count/unread").catch(() => ({ unread_count: 0 }));
+      const count = await apiFetch("/alerts/count/unread/").catch(() => ({ unread_count: 0 }));
       setUnreadCount(count?.unread_count || 0);
     } catch {}
     setLoading(false);

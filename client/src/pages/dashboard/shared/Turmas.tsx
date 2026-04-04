@@ -45,7 +45,7 @@ export default function Turmas() {
 
   const loadData = async () => {
     try {
-      const [c, s] = await Promise.all([apiFetch("/classes"), apiFetch("/students").catch(() => [])]);
+      const [c, s] = await Promise.all([apiFetch("/classes/"), apiFetch("/students/").catch(() => [])]);
       setClasses(c || []);
       setStudents(s || []);
     } catch {}

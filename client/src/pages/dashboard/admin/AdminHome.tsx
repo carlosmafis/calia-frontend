@@ -52,11 +52,11 @@ export default function AdminHome() {
     const load = async () => {
       try {
         const [c, s, a, t, sub] = await Promise.all([
-          apiFetch("/classes"),
-          apiFetch("/students"),
-          apiFetch("/assessments"),
-          apiFetch("/teachers").catch(() => []),
-          apiFetch("/subjects").catch(() => []),
+          apiFetch("/classes/"),
+          apiFetch("/students/"),
+          apiFetch("/assessments/"),
+          apiFetch("/teachers/").catch(() => []),
+          apiFetch("/subjects/").catch(() => []),
         ]);
         setClasses(c || []);
         setStudents(s || []);
@@ -66,7 +66,7 @@ export default function AdminHome() {
 
         // Try to get dashboard stats from historical/school/overview
         try {
-          const st = await apiFetch("/historical/school/overview");
+          const st = await apiFetch("/historical/school/overview/");
           setStats(st);
         } catch (e) {
           console.error("Erro ao buscar overview:", e);

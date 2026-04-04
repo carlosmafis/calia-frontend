@@ -25,8 +25,8 @@ export default function CorrecaoManual() {
     const load = async () => {
       try {
         const [a, s] = await Promise.all([
-          apiFetch("/assessments"),
-          apiFetch("/students"),
+          apiFetch("/assessments/"),
+          apiFetch("/students/"),
         ]);
         setAssessments(a || []);
         setStudents(s || []);

@@ -47,7 +47,7 @@ export default function Perfil() {
   const loadStudentResults = async () => {
     setLoadingResults(true);
     try {
-      const results = await apiFetch("/dashboard/student-results");
+      const results = await apiFetch("/dashboard/student-results/");
       setStudentResults(Array.isArray(results) ? results : []);
     } catch (err) {
       setStudentResults([]);

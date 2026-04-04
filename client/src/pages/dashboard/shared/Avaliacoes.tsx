@@ -60,10 +60,10 @@ export default function Avaliacoes() {
   const loadData = async () => {
     try {
       const [a, c, s, p] = await Promise.all([
-        apiFetch("/assessments"),
-        apiFetch("/classes"),
-        apiFetch("/subjects"),
-        apiFetch("/teachers/school/list"),
+        apiFetch("/assessments/"),
+        apiFetch("/classes/"),
+        apiFetch("/subjects/"),
+        apiFetch("/teachers/school/list/"),
       ]);
       setAssessments(a || []);
       setClasses(c || []);

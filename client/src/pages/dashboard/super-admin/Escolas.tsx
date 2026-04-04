@@ -32,7 +32,7 @@ export default function Escolas() {
 
   const loadSchools = async () => {
     try {
-      const data = await apiFetch("/schools");
+      const data = await apiFetch("/schools/");
       setSchools(data || []);
     } catch {
       toast.error("Erro ao carregar escolas");

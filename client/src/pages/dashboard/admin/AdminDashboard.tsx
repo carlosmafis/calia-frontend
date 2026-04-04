@@ -50,11 +50,11 @@ export default function AdminDashboard() {
     const load = async () => {
       try {
         const [ov, cls, stu, tch, alr] = await Promise.all([
-          apiFetch("/admin/dashboard/overview").catch(() => null),
-          apiFetch("/admin/dashboard/classes").catch(() => []),
+          apiFetch("/admin/dashboard/overview/").catch(() => null),
+          apiFetch("/admin/dashboard/classes/").catch(() => []),
           apiFetch("/admin/dashboard/students?limit=10").catch(() => ({ students: [] })),
-          apiFetch("/admin/dashboard/teachers").catch(() => []),
-          apiFetch("/admin/dashboard/alerts").catch(() => []),
+          apiFetch("/admin/dashboard/teachers/").catch(() => []),
+          apiFetch("/admin/dashboard/alerts/").catch(() => []),
         ]);
         setOverview(ov);
         setClasses(cls || []);

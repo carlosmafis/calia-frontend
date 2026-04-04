@@ -40,8 +40,8 @@ export default function ProfessorHome() {
     const load = async () => {
       try {
         const [c, a] = await Promise.all([
-          apiFetch("/classes"),
-          apiFetch("/assessments"),
+          apiFetch("/classes/"),
+          apiFetch("/assessments/"),
         ]);
         setClasses(c || []);
         setAssessments(a || []);
@@ -58,7 +58,7 @@ export default function ProfessorHome() {
 
         // Load number of corrections
         try {
-          const corr = await apiFetch("/ocr/submissions").catch(() => []);
+          const corr = await apiFetch("/ocr/submissions/").catch(() => []);
           setCorrections((corr || []).length);
         } catch {}
       } catch {}

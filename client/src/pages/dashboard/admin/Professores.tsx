@@ -40,9 +40,9 @@ export default function Professores() {
   const loadData = async () => {
     try {
       const [p, s, c] = await Promise.all([
-        apiFetch("/teachers"),
-        apiFetch("/subjects"),
-        apiFetch("/classes"),
+        apiFetch("/teachers/"),
+        apiFetch("/subjects/"),
+        apiFetch("/classes/"),
       ]);
       setProfessors(p || []);
       setSubjects(s || []);

@@ -49,8 +49,8 @@ export default function Relatorios() {
     const load = async () => {
       try {
         const [as_, stu] = await Promise.all([
-          apiFetch("/assessments").catch(() => []),
-          apiFetch("/students").catch(() => []),
+          apiFetch("/assessments/").catch(() => []),
+          apiFetch("/students/").catch(() => []),
         ]);
         setAssessments(as_ || []);
         setStudents(stu || []);

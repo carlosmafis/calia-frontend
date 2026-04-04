@@ -42,8 +42,8 @@ export default function Alunos() {
   const loadData = async () => {
     try {
       const [s, c] = await Promise.all([
-        apiFetch("/students"),
-        apiFetch("/classes"),
+        apiFetch("/students/"),
+        apiFetch("/classes/"),
       ]);
       setStudents(s || []);
       setClasses(c || []);

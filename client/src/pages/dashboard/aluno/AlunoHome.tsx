@@ -41,7 +41,7 @@ export default function AlunoHome() {
     const load = async () => {
       try {
         // Try to get student submissions
-        const data = await apiFetch("/dashboard/student-results");
+        const data = await apiFetch("/dashboard/student-results/");
         setSubmissions(data || []);
         setError(null);
       } catch (err: any) {

@@ -58,9 +58,9 @@ export default function HistoricalAnalysisAdmin() {
     const load = async () => {
       try {
         const [c, t, s] = await Promise.all([
-          apiFetch("/classes").catch(() => []),
-          apiFetch("/teachers").catch(() => []),
-          apiFetch("/students").catch(() => []),
+          apiFetch("/classes/").catch(() => []),
+          apiFetch("/teachers/").catch(() => []),
+          apiFetch("/students/").catch(() => []),
         ]);
         setClasses(c || []);
         setTeachers(t || []);

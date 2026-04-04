@@ -38,9 +38,9 @@ export default function CorrecaoOCR() {
     const load = async () => {
       try {
         const [c, a, s] = await Promise.all([
-          apiFetch("/classes").catch(() => []),
-          apiFetch("/assessments").catch(() => []),
-          apiFetch("/students").catch(() => []),
+          apiFetch("/classes/").catch(() => []),
+          apiFetch("/assessments/").catch(() => []),
+          apiFetch("/students/").catch(() => []),
         ]);
         setClasses(c || []);
         setAssessments(a || []);

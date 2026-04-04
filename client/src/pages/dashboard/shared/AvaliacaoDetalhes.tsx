@@ -56,7 +56,7 @@ export default function AvaliacaoDetalhes({ id }: { id: string }) {
         const [a, sub, stu] = await Promise.all([
           apiFetch(`/assessments/${id}`).catch(() => null),
           apiFetch(`/assessments/${id}/submissions`).catch(() => []),
-          apiFetch("/students").catch(() => []),
+          apiFetch("/students/").catch(() => []),
         ]);
         setAssessment(a);
         setSubmissions(sub || []);

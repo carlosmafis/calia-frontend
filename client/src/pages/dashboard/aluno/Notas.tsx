@@ -15,7 +15,7 @@ export default function Notas() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await apiFetch("/dashboard/student-results").catch(() => []);
+        const data = await apiFetch("/dashboard/student-results/").catch(() => []);
         setSubmissions(data || []);
       } catch {}
       setLoading(false);

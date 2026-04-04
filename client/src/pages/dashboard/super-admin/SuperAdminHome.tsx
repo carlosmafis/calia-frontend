@@ -18,7 +18,7 @@ export default function SuperAdminHome() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const s = await apiFetch("/schools");
+        const s = await apiFetch("/schools/");
         setSchools(s || []);
       } catch {}
       setLoading(false);
